@@ -48,4 +48,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Coolify redeploy
-        run: curl -fsSL -X GET "${{ secrets.COOLIFY_WEBHOOK_URL }}"
+        run: curl -fsSL -X GET "${{ secrets.COOLIFY_WEBHOOK_URL }}" \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}"
