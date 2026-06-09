@@ -1,0 +1,20 @@
+# .NET
+bin/
+obj/
+*.user
+appsettings.*.json
+!appsettings.Development.json
+.vs/
+*.pfx
+*.p12
+
+# Node
+node_modules/
+dist/
+
+# Claude Code
+.claude/
+
+# Misc
+.env
+.DS_Store
