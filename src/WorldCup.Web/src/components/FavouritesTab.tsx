@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Star } from 'lucide-react'
 import { api } from '../api'
 import type { Game, Group, TeamStanding } from '../types'
 import { GameCard } from './GamesTab'
@@ -46,9 +47,9 @@ function TeamCard({ team, groupName, position, onUnstar }: TeamCardProps) {
       <button
         onClick={onUnstar}
         aria-label={`Unstar ${team.team}`}
-        className="text-amber-400 hover:text-amber-300 transition-colors text-lg leading-none"
+        className="text-amber-400 hover:text-amber-300 transition-colors"
       >
-        ★
+        <Star size={16} className="fill-amber-400 text-amber-400" />
       </button>
     </div>
   )
@@ -77,10 +78,10 @@ export default function FavouritesTab({ favourites, toggleFavourite }: Props) {
   if (favourites.size === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
-        <span className="text-5xl">☆</span>
+        <Star size={48} className="text-gray-600" />
         <p className="text-white font-semibold">No favourites yet</p>
         <p className="text-sm text-gray-400">
-          Tap ☆ next to a team in the Standings tab to follow them here.
+          Tap the star next to a team in Games or Standings to follow them here.
         </p>
       </div>
     )
@@ -131,7 +132,9 @@ export default function FavouritesTab({ favourites, toggleFavourite }: Props) {
               {[...favourites].filter(name => !teamInfo.has(name)).map(name => (
                 <div key={name} className="bg-gray-900 rounded-xl border border-amber-400/30 px-4 py-3 flex items-center justify-between">
                   <span className="text-sm text-white">{name}</span>
-                  <button onClick={() => toggleFavourite(name)} className="text-amber-400 hover:text-amber-300 text-lg leading-none">★</button>
+                  <button onClick={() => toggleFavourite(name)} className="text-amber-400 hover:text-amber-300 transition-colors">
+                    <Star size={16} className="fill-amber-400 text-amber-400" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -150,7 +153,7 @@ export default function FavouritesTab({ favourites, toggleFavourite }: Props) {
                   </h3>
                   <div className="space-y-2">
                     {dayGames.map(game => (
-                      <GameCard key={game.id} game={game} favourites={favourites} onClick={() => setSelected(game)} />
+                      <GameCard key={game.id} game={game} favourites={favourites} toggleFavourite={toggleFavourite} onClick={() => setSelected(game)} />
                     ))}
                   </div>
                 </div>
