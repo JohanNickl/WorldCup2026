@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import GamesTab from './components/GamesTab'
 import StandingsTab from './components/StandingsTab'
 import BracketTab from './components/BracketTab'
+import AdminPanel from './components/AdminPanel'
 
 type Tab = 'games' | 'standings' | 'bracket'
 
@@ -13,13 +14,27 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('games')
+  const [showAdmin, setShowAdmin] = useState(false)
+  const tapCount = useRef(0)
+  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function handleGlobeTap() {
+    tapCount.current += 1
+    if (tapTimer.current) clearTimeout(tapTimer.current)
+    tapTimer.current = setTimeout(() => { tapCount.current = 0 }, 2000)
+    if (tapCount.current >= 5) {
+      tapCount.current = 0
+      if (tapTimer.current) clearTimeout(tapTimer.current)
+      setShowAdmin(true)
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-svh bg-gray-950">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-gray-900 border-b border-gray-800 shadow-lg">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-          <span className="text-2xl">🌍</span>
+          <span className="text-2xl cursor-pointer select-none" onClick={handleGlobeTap}>🌍</span>
           <div>
             <h1 className="text-base font-bold leading-tight text-white">FIFA World Cup 2026</h1>
             <p className="text-xs text-gray-400">USA · Canada · Mexico</p>
@@ -52,6 +67,8 @@ export default function App() {
           ))}
         </div>
       </nav>
+
+      {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} />}
     </div>
   )
 }
