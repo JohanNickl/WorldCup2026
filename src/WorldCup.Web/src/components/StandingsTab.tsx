@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Star } from 'lucide-react'
 import { api } from '../api'
 import type { Group, TeamStanding } from '../types'
 
@@ -57,10 +58,10 @@ function GroupCard({ group, favourites, toggleFavourite }: GroupCardProps) {
                         className="ml-auto pl-2 leading-none transition-colors"
                         aria-label={isFav ? `Unstar ${team.team}` : `Star ${team.team}`}
                       >
-                        {isFav
-                          ? <span className="text-amber-400">★</span>
-                          : <span className="text-gray-600 hover:text-gray-400">☆</span>
-                        }
+                        <Star
+                          size={13}
+                          className={isFav ? 'fill-amber-400 text-amber-400' : 'text-gray-600 hover:text-gray-400'}
+                        />
                       </button>
                     </div>
                   </td>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Star } from 'lucide-react'
 import { api } from '../api'
 import type { Game } from '../types'
 import GameDetailSheet from './GameDetailSheet'
@@ -25,11 +26,31 @@ function groupByDate(games: Game[]): Map<string, Game[]> {
   return map
 }
 
-export function GameCard({ game, favourites, onClick }: { game: Game; favourites: Set<string>; onClick: () => void }) {
+export function GameCard({ game, favourites, toggleFavourite, onClick }: {
+  game: Game
+  favourites: Set<string>
+  toggleFavourite?: (team: string) => void
+  onClick: () => void
+}) {
   const hasScore = game.homeScore !== null && game.awayScore !== null
   const homeFav = favourites.has(game.homeTeam)
   const awayFav = favourites.has(game.awayTeam)
   const isFavMatch = homeFav || awayFav
+
+  function starButton(team: string, isFav: boolean, align: 'left' | 'right') {
+    return (
+      <button
+        className={`shrink-0 p-1 -m-1 transition-colors ${align === 'right' ? 'ml-1' : 'mr-1'}`}
+        onClick={e => { e.stopPropagation(); toggleFavourite?.(team) }}
+        aria-label={isFav ? `Unstar ${team}` : `Star ${team}`}
+      >
+        <Star
+          size={12}
+          className={isFav ? 'fill-amber-400 text-amber-400' : 'text-gray-600 hover:text-gray-400'}
+        />
+      </button>
+    )
+  }
 
   return (
     <div
@@ -49,8 +70,8 @@ export function GameCard({ game, favourites, onClick }: { game: Game; favourites
 
       <div className="flex items-center justify-between gap-2">
         <span className="flex-1 text-right text-sm font-semibold text-gray-100 flex items-center justify-end gap-1">
-          {homeFav && <span className="text-amber-400 text-xs leading-none">★</span>}
           {game.homeTeam}
+          {toggleFavourite && starButton(game.homeTeam, homeFav, 'right')}
         </span>
         {hasScore ? (
           <span className="text-base font-bold text-white px-3">
@@ -60,8 +81,8 @@ export function GameCard({ game, favourites, onClick }: { game: Game; favourites
           <span className="text-sm text-gray-600 px-3">vs</span>
         )}
         <span className="flex-1 text-left text-sm font-semibold text-gray-100 flex items-center gap-1">
+          {toggleFavourite && starButton(game.awayTeam, awayFav, 'left')}
           {game.awayTeam}
-          {awayFav && <span className="text-amber-400 text-xs leading-none">★</span>}
         </span>
       </div>
 
@@ -74,9 +95,10 @@ export function GameCard({ game, favourites, onClick }: { game: Game; favourites
 
 interface Props {
   favourites: Set<string>
+  toggleFavourite: (team: string) => void
 }
 
-export default function GamesTab({ favourites }: Props) {
+export default function GamesTab({ favourites, toggleFavourite }: Props) {
   const [games, setGames] = useState<Game[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -104,7 +126,7 @@ export default function GamesTab({ favourites }: Props) {
             </h2>
             <div className="space-y-2">
               {dayGames.map(game => (
-                <GameCard key={game.id} game={game} favourites={favourites} onClick={() => setSelected(game)} />
+                <GameCard key={game.id} game={game} favourites={favourites} toggleFavourite={toggleFavourite} onClick={() => setSelected(game)} />
               ))}
             </div>
           </section>

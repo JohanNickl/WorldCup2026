@@ -1,4 +1,5 @@
 import { createPortal } from 'react-dom'
+import { Calendar, MapPin, CalendarPlus, X } from 'lucide-react'
 import type { Game } from '../types'
 
 function formatFullDate(iso: string, timezone: string) {
@@ -80,7 +81,7 @@ export default function GameDetailSheet({ game, onClose }: Props) {
             <span className="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2.5 py-1 rounded-full">
               Group {game.group} · FIFA World Cup 2026
             </span>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-300 text-xl leading-none">✕</button>
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-300"><X size={18} /></button>
           </div>
 
           {/* Teams + score */}
@@ -99,14 +100,14 @@ export default function GameDetailSheet({ game, onClose }: Props) {
           {/* Match details */}
           <div className="bg-gray-800 rounded-xl divide-y divide-gray-700 text-sm">
             <div className="flex items-center gap-3 px-4 py-3">
-              <span className="text-lg">📅</span>
+              <Calendar size={18} className="text-gray-400 shrink-0" />
               <div>
                 <div className="text-gray-200 font-medium">{formatFullDate(game.date, game.timezone)}</div>
                 <div className="text-gray-400 text-xs">{formatTime(game.date, game.timezone)} venue time · {formatUserTime(game.date)} your time</div>
               </div>
             </div>
             <div className="flex items-center gap-3 px-4 py-3">
-              <span className="text-lg">🏟️</span>
+              <MapPin size={18} className="text-gray-400 shrink-0" />
               <div>
                 <div className="text-gray-200 font-medium">{game.venue}</div>
                 <div className="text-gray-400 text-xs">{game.city}, {game.country}</div>
@@ -119,7 +120,7 @@ export default function GameDetailSheet({ game, onClose }: Props) {
             onClick={() => addToCalendar(game)}
             className="w-full bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white font-semibold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
-            <span>📆</span>
+            <CalendarPlus size={16} />
             Add to Calendar
           </button>
         </div>
