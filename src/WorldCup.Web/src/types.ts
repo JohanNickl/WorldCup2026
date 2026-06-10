@@ -1,6 +1,7 @@
 export interface Game {
   id: number
   date: string
+  timezone: string
   group: string
   homeTeam: string
   awayTeam: string

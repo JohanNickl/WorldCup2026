@@ -3,14 +3,20 @@ import { api } from '../api'
 import type { Game } from '../types'
 import GameDetailSheet from './GameDetailSheet'
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    weekday: 'short', month: 'short', day: 'numeric',
+function formatDate(iso: string, timezone: string) {
+  return new Date(iso).toLocaleDateString(undefined, {
+    weekday: 'short', month: 'short', day: 'numeric', timeZone: timezone,
   })
 }
 
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('en-US', {
+function formatTime(iso: string, timezone: string) {
+  return new Date(iso).toLocaleTimeString(undefined, {
+    hour: '2-digit', minute: '2-digit', timeZone: timezone,
+  })
+}
+
+function formatUserTime(iso: string) {
+  return new Date(iso).toLocaleTimeString(undefined, {
     hour: '2-digit', minute: '2-digit',
   })
 }
@@ -18,7 +24,7 @@ function formatTime(iso: string) {
 function groupByDate(games: Game[]): Map<string, Game[]> {
   const map = new Map<string, Game[]>()
   for (const game of games) {
-    const key = formatDate(game.date)
+    const key = formatDate(game.date, game.timezone)
     if (!map.has(key)) map.set(key, [])
     map.get(key)!.push(game)
   }
@@ -33,7 +39,7 @@ function GameCard({ game, onClick }: { game: Game; onClick: () => void }) {
         <span className="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">
           Group {game.group}
         </span>
-        <span className="text-xs text-gray-400">{formatTime(game.date)}</span>
+        <span className="text-xs text-gray-400">{formatUserTime(game.date)}</span>
       </div>
 
       <div className="flex items-center justify-between gap-2">

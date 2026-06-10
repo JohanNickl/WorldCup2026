@@ -1,14 +1,20 @@
 import { createPortal } from 'react-dom'
 import type { Game } from '../types'
 
-function formatFullDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+function formatFullDate(iso: string, timezone: string) {
+  return new Date(iso).toLocaleDateString(undefined, {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: timezone,
   })
 }
 
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('en-US', {
+function formatTime(iso: string, timezone: string) {
+  return new Date(iso).toLocaleTimeString(undefined, {
+    hour: '2-digit', minute: '2-digit', timeZone: timezone,
+  })
+}
+
+function formatUserTime(iso: string) {
+  return new Date(iso).toLocaleTimeString(undefined, {
     hour: '2-digit', minute: '2-digit',
   })
 }
@@ -18,21 +24,32 @@ function addToCalendar(game: Game) {
   const end = new Date(start.getTime() + 2 * 60 * 60 * 1000) // 2 hours
 
   const pad = (n: number) => String(n).padStart(2, '0')
-  const fmt = (d: Date) =>
-    `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T` +
-    `${pad(d.getHours())}${pad(d.getMinutes())}00`
+  const fmtUtc = (d: Date) =>
+    `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T` +
+    `${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`
 
-  const title = encodeURIComponent(`⚽ ${game.homeTeam} vs ${game.awayTeam} — FIFA WC 2026`)
-  const details = encodeURIComponent(`Group ${game.group} · FIFA World Cup 2026\n${game.venue}, ${game.city}, ${game.country}`)
-  const location = encodeURIComponent(`${game.venue}, ${game.city}, ${game.country}`)
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//WorldCup2026//EN',
+    'BEGIN:VEVENT',
+    `UID:wc2026-${game.id}@worldcup2026`,
+    `DTSTART:${fmtUtc(start)}`,
+    `DTEND:${fmtUtc(end)}`,
+    `SUMMARY:⚽ ${game.homeTeam} vs ${game.awayTeam}`,
+    `DESCRIPTION:Group ${game.group} · FIFA World Cup 2026`,
+    `LOCATION:${game.venue}\\, ${game.city}\\, ${game.country}`,
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n')
 
-  const url = `https://www.google.com/calendar/render?action=TEMPLATE` +
-    `&text=${title}` +
-    `&dates=${fmt(start)}/${fmt(end)}` +
-    `&details=${details}` +
-    `&location=${location}`
-
-  window.open(url, '_blank')
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `wc2026-${game.homeTeam}-vs-${game.awayTeam}.ics`.replace(/\s+/g, '-')
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 interface Props {
@@ -84,8 +101,8 @@ export default function GameDetailSheet({ game, onClose }: Props) {
             <div className="flex items-center gap-3 px-4 py-3">
               <span className="text-lg">📅</span>
               <div>
-                <div className="text-gray-200 font-medium">{formatFullDate(game.date)}</div>
-                <div className="text-gray-400 text-xs">{formatTime(game.date)} local time</div>
+                <div className="text-gray-200 font-medium">{formatFullDate(game.date, game.timezone)}</div>
+                <div className="text-gray-400 text-xs">{formatTime(game.date, game.timezone)} venue time · {formatUserTime(game.date)} your time</div>
               </div>
             </div>
             <div className="flex items-center gap-3 px-4 py-3">
