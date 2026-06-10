@@ -19,6 +19,7 @@ app.UseStaticFiles();
 app.MapGameEndpoints();
 app.MapGroupEndpoints();
 app.MapBracketEndpoints();
+app.MapAdminEndpoints();
 
 app.MapFallbackToFile("index.html");
 
