@@ -9,11 +9,6 @@ function formatDate(iso: string, timezone: string) {
   })
 }
 
-function formatTime(iso: string, timezone: string) {
-  return new Date(iso).toLocaleTimeString(undefined, {
-    hour: '2-digit', minute: '2-digit', timeZone: timezone,
-  })
-}
 
 function formatUserTime(iso: string) {
   return new Date(iso).toLocaleTimeString(undefined, {
