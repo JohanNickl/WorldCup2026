@@ -2,21 +2,41 @@ import { useState, useRef } from 'react'
 import GamesTab from './components/GamesTab'
 import StandingsTab from './components/StandingsTab'
 import BracketTab from './components/BracketTab'
+import FavouritesTab from './components/FavouritesTab'
 import AdminPanel from './components/AdminPanel'
 
-type Tab = 'games' | 'standings' | 'bracket'
+type Tab = 'games' | 'standings' | 'bracket' | 'favourites'
 
 const tabs: { id: Tab; label: string; icon: string }[] = [
   { id: 'games', label: 'Games', icon: '⚽' },
   { id: 'standings', label: 'Standings', icon: '📊' },
   { id: 'bracket', label: 'Bracket', icon: '🏆' },
+  { id: 'favourites', label: 'Favourites', icon: '⭐' },
 ]
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('games')
   const [showAdmin, setShowAdmin] = useState(false)
+  const [favourites, setFavourites] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem('favouriteTeams')
+      return new Set(stored ? JSON.parse(stored) : [])
+    } catch {
+      return new Set()
+    }
+  })
   const tapCount = useRef(0)
   const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function toggleFavourite(team: string) {
+    setFavourites(prev => {
+      const next = new Set(prev)
+      if (next.has(team)) next.delete(team)
+      else next.add(team)
+      localStorage.setItem('favouriteTeams', JSON.stringify([...next]))
+      return next
+    })
+  }
 
   function handleGlobeTap() {
     tapCount.current += 1
@@ -44,9 +64,10 @@ export default function App() {
 
       {/* Page content */}
       <main className="flex-1 max-w-2xl w-full mx-auto pb-20">
-        {tab === 'games' && <GamesTab />}
-        {tab === 'standings' && <StandingsTab />}
-        {tab === 'bracket' && <BracketTab />}
+        {tab === 'games'      && <GamesTab favourites={favourites} />}
+        {tab === 'standings'  && <StandingsTab favourites={favourites} toggleFavourite={toggleFavourite} />}
+        {tab === 'bracket'    && <BracketTab />}
+        {tab === 'favourites' && <FavouritesTab favourites={favourites} toggleFavourite={toggleFavourite} />}
       </main>
 
       {/* Bottom tab nav */}
