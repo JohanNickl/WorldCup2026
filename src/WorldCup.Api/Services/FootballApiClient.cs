@@ -33,8 +33,8 @@ public class FootballApiClient(IHttpClientFactory factory, IConfiguration config
     }
 
     private static ExternalMatchResult ToResult(MatchDto m) => new(
-        m.HomeTeam?.Name ?? "",
-        m.AwayTeam?.Name ?? "",
+        m.HomeTeam?.ShortName ?? m.HomeTeam?.Name ?? "",
+        m.AwayTeam?.ShortName ?? m.AwayTeam?.Name ?? "",
         m.Score?.FullTime?.Home,
         m.Score?.FullTime?.Away,
         m.Status ?? "SCHEDULED"
@@ -50,7 +50,8 @@ public class FootballApiClient(IHttpClientFactory factory, IConfiguration config
         [property: JsonPropertyName("score")] ScoreDto? Score);
 
     private record TeamDto(
-        [property: JsonPropertyName("name")] string? Name);
+        [property: JsonPropertyName("name")] string? Name,
+        [property: JsonPropertyName("shortName")] string? ShortName);
 
     private record ScoreDto(
         [property: JsonPropertyName("fullTime")] ScoreValueDto? FullTime);
