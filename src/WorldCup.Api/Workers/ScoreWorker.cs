@@ -66,7 +66,7 @@ public class ScoreWorker(
                     var mapped = TryMapViaConfig(result.HomeTeam, result.AwayTeam, games);
                     if (mapped is null)
                     {
-                        logger.LogDebug("No match found for {Home} vs {Away}", result.HomeTeam, result.AwayTeam);
+                        logger.LogWarning("No match found for {Home} vs {Away}", result.HomeTeam, result.AwayTeam);
                         continue;
                     }
                     match = mapped;

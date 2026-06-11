@@ -135,10 +135,16 @@ export default function GamesTab({ favourites, toggleFavourite }: Props) {
   const now = useNow()
 
   useEffect(() => {
-    api.games()
-      .then(data => setGames(data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())))
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false))
+    let cancelled = false
+    function fetchGames() {
+      api.games()
+        .then(data => { if (!cancelled) setGames(data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())) })
+        .catch(e => { if (!cancelled) setError(e.message) })
+        .finally(() => { if (!cancelled) setLoading(false) })
+    }
+    fetchGames()
+    const id = setInterval(fetchGames, 60_000)
+    return () => { cancelled = true; clearInterval(id) }
   }, [])
 
   if (loading) return <div className="flex justify-center items-center h-40 text-gray-500">Loading games…</div>
