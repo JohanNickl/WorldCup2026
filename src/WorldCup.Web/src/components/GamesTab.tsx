@@ -81,10 +81,10 @@ export function GameCard({ game, favourites, now, onClick }: {
         <div className="flex flex-col items-end gap-0.5">
           <div className="flex items-center gap-2">
             {isLive && (
-              <span className="flex items-center gap-1 text-xs font-bold text-red-400">
+              <span className="flex items-center gap-1 text-xs font-bold text-yellow-400">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-400" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-400" />
                 </span>
                 LIVE
               </span>
@@ -92,7 +92,7 @@ export function GameCard({ game, favourites, now, onClick }: {
             <span className="text-xs text-gray-400">{formatUserTime(game.date)}</span>
           </div>
           {timer && (
-            <span className={`text-xs font-mono tabular-nums ${isLive ? 'text-red-400' : 'text-amber-400'}`}>
+            <span className={`text-xs font-mono tabular-nums ${isLive ? 'text-yellow-400' : 'text-amber-400'}`}>
               {timer}
             </span>
           )}
