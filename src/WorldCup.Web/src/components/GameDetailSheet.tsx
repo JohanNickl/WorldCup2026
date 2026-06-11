@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom'
-import { Calendar, MapPin, CalendarPlus, X } from 'lucide-react'
+import { Calendar, MapPin, CalendarPlus, Star, X } from 'lucide-react'
 import type { Game } from '../types'
 
 function formatFullDate(iso: string, timezone: string) {
@@ -56,11 +56,28 @@ function addToCalendar(game: Game) {
 interface Props {
   game: Game
   onClose: () => void
+  favourites?: Set<string>
+  toggleFavourite?: (team: string) => void
 }
 
-export default function GameDetailSheet({ game, onClose }: Props) {
-  const isLive   = game.status === 'live'
-  const hasScore = game.homeScore !== null && game.awayScore !== null
+export default function GameDetailSheet({ game, onClose, favourites, toggleFavourite }: Props) {
+  const isLive    = game.status === 'live'
+  const hasScore  = game.homeScore !== null && game.awayScore !== null
+  const homeFav   = favourites?.has(game.homeTeam) ?? false
+  const awayFav   = favourites?.has(game.awayTeam) ?? false
+
+  function StarBtn({ team, isFav }: { team: string; isFav: boolean }) {
+    if (!toggleFavourite) return null
+    return (
+      <button
+        onClick={() => toggleFavourite(team)}
+        aria-label={isFav ? `Unstar ${team}` : `Star ${team}`}
+        className="shrink-0 p-1 -m-1 transition-colors"
+      >
+        <Star size={18} className={isFav ? 'fill-amber-400 text-amber-400' : 'text-gray-600 hover:text-gray-400'} />
+      </button>
+    )
+  }
 
   return createPortal(
     <div
@@ -87,7 +104,10 @@ export default function GameDetailSheet({ game, onClose }: Props) {
 
           {/* Teams + score */}
           <div className="flex items-center justify-between gap-4">
-            <span className="flex-1 text-right text-xl font-bold text-white leading-tight">{game.homeTeam}</span>
+            <span className="flex-1 flex items-center justify-end gap-2 text-xl font-bold text-white leading-tight">
+              {game.homeTeam}
+              <StarBtn team={game.homeTeam} isFav={homeFav} />
+            </span>
             {hasScore ? (
               <span className={`text-3xl font-black tabular-nums px-2 ${isLive ? 'text-emerald-400' : 'text-white'}`}>
                 {game.homeScore} – {game.awayScore}
@@ -106,7 +126,10 @@ export default function GameDetailSheet({ game, onClose }: Props) {
                 <span className="text-2xl font-black text-gray-600">vs</span>
               </div>
             )}
-            <span className="flex-1 text-left text-xl font-bold text-white leading-tight">{game.awayTeam}</span>
+            <span className="flex-1 flex items-center gap-2 text-xl font-bold text-white leading-tight">
+              <StarBtn team={game.awayTeam} isFav={awayFav} />
+              {game.awayTeam}
+            </span>
           </div>
 
           {/* Match details */}

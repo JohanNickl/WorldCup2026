@@ -1,8 +1,28 @@
 import { useEffect, useState } from 'react'
-import { Star } from 'lucide-react'
 import { api } from '../api'
 import type { Game } from '../types'
 import GameDetailSheet from './GameDetailSheet'
+
+export function useNow(intervalMs = 30_000) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), intervalMs)
+    return () => clearInterval(id)
+  }, [intervalMs])
+  return now
+}
+
+function fmtCountdown(ms: number) {
+  const totalMin = Math.floor(ms / 60_000)
+  const h = Math.floor(totalMin / 60)
+  const m = totalMin % 60
+  return `-${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
+function fmtElapsed(ms: number) {
+  const totalMin = Math.floor(ms / 60_000)
+  return `${totalMin} min`
+}
 
 function formatDate(iso: string, timezone: string) {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -26,32 +46,24 @@ function groupByDate(games: Game[]): Map<string, Game[]> {
   return map
 }
 
-export function GameCard({ game, favourites, toggleFavourite, onClick }: {
+export function GameCard({ game, favourites, now, onClick }: {
   game: Game
   favourites: Set<string>
-  toggleFavourite?: (team: string) => void
+  now: number
   onClick: () => void
 }) {
   const isLive     = game.status === 'live'
   const showScore  = game.homeScore !== null && game.awayScore !== null
-  const homeFav    = favourites.has(game.homeTeam)
-  const awayFav    = favourites.has(game.awayTeam)
-  const isFavMatch = homeFav || awayFav
+  const isFavMatch = favourites.has(game.homeTeam) || favourites.has(game.awayTeam)
 
-  function starButton(team: string, isFav: boolean, align: 'left' | 'right') {
-    return (
-      <button
-        className={`shrink-0 p-1 -m-1 transition-colors ${align === 'right' ? 'ml-1' : 'mr-1'}`}
-        onClick={e => { e.stopPropagation(); toggleFavourite?.(team) }}
-        aria-label={isFav ? `Unstar ${team}` : `Star ${team}`}
-      >
-        <Star
-          size={12}
-          className={isFav ? 'fill-amber-400 text-amber-400' : 'text-gray-600 hover:text-gray-400'}
-        />
-      </button>
-    )
-  }
+  const gameMs  = new Date(game.date).getTime()
+  const diffMs  = gameMs - now
+  const THREE_H = 3 * 60 * 60 * 1000
+  const timer   = isLive
+    ? fmtElapsed(now - gameMs)
+    : diffMs > 0 && diffMs <= THREE_H
+      ? fmtCountdown(diffMs)
+      : null
 
   return (
     <div
@@ -66,24 +78,30 @@ export function GameCard({ game, favourites, toggleFavourite, onClick }: {
         <span className="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">
           Group {game.group}
         </span>
-        <div className="flex items-center gap-2">
-          {isLive && (
-            <span className="flex items-center gap-1 text-xs font-bold text-red-400">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-400" />
+        <div className="flex flex-col items-end gap-0.5">
+          <div className="flex items-center gap-2">
+            {isLive && (
+              <span className="flex items-center gap-1 text-xs font-bold text-red-400">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-400" />
+                </span>
+                LIVE
               </span>
-              LIVE
+            )}
+            <span className="text-xs text-gray-400">{formatUserTime(game.date)}</span>
+          </div>
+          {timer && (
+            <span className={`text-xs font-mono tabular-nums ${isLive ? 'text-red-400' : 'text-amber-400'}`}>
+              {timer}
             </span>
           )}
-          <span className="text-xs text-gray-400">{formatUserTime(game.date)}</span>
         </div>
       </div>
 
       <div className="flex items-center justify-between gap-2">
-        <span className="flex-1 text-right text-sm font-semibold text-gray-100 flex items-center justify-end gap-1">
+        <span className="flex-1 text-right text-sm font-semibold text-gray-100">
           {game.homeTeam}
-          {toggleFavourite && starButton(game.homeTeam, homeFav, 'right')}
         </span>
         {showScore ? (
           <span className={`text-base font-bold px-3 tabular-nums ${isLive ? 'text-emerald-400' : 'text-white'}`}>
@@ -92,13 +110,12 @@ export function GameCard({ game, favourites, toggleFavourite, onClick }: {
         ) : (
           <span className="text-sm text-gray-600 px-3">vs</span>
         )}
-        <span className="flex-1 text-left text-sm font-semibold text-gray-100 flex items-center gap-1">
-          {toggleFavourite && starButton(game.awayTeam, awayFav, 'left')}
+        <span className="flex-1 text-left text-sm font-semibold text-gray-100">
           {game.awayTeam}
         </span>
       </div>
 
-      <div className="mt-2 text-xs text-gray-500 text-center">
+      <div className="mt-2 text-xs text-gray-300 text-center">
         {game.venue} · {game.city}, {game.country}
       </div>
     </div>
@@ -115,6 +132,7 @@ export default function GamesTab({ favourites, toggleFavourite }: Props) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Game | null>(null)
+  const now = useNow()
 
   useEffect(() => {
     api.games()
@@ -138,13 +156,13 @@ export default function GamesTab({ favourites, toggleFavourite }: Props) {
             </h2>
             <div className="space-y-2">
               {dayGames.map(game => (
-                <GameCard key={game.id} game={game} favourites={favourites} toggleFavourite={toggleFavourite} onClick={() => setSelected(game)} />
+                <GameCard key={game.id} game={game} favourites={favourites} now={now} onClick={() => setSelected(game)} />
               ))}
             </div>
           </section>
         ))}
       </div>
-      {selected && <GameDetailSheet game={selected} onClose={() => setSelected(null)} />}
+      {selected && <GameDetailSheet game={selected} onClose={() => setSelected(null)} favourites={favourites} toggleFavourite={toggleFavourite} />}
     </>
   )
 }

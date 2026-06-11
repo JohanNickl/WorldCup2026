@@ -1,15 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Star } from 'lucide-react'
 import { api } from '../api'
 import type { Group, TeamStanding } from '../types'
 
 interface GroupCardProps {
   group: Group
   favourites: Set<string>
-  toggleFavourite: (team: string) => void
 }
 
-function GroupCard({ group, favourites, toggleFavourite }: GroupCardProps) {
+function GroupCard({ group, favourites }: GroupCardProps) {
   const sorted = [...group.teams].sort((a, b) =>
     b.points !== a.points ? b.points - a.points :
     b.gd !== a.gd ? b.gd - a.gd :
@@ -53,16 +51,6 @@ function GroupCard({ group, favourites, toggleFavourite }: GroupCardProps) {
                       {i === 3 && <span className="w-1.5 h-1.5 rounded-full bg-transparent shrink-0" />}
                       <span>{team.flag}</span>
                       <span>{team.team}</span>
-                      <button
-                        onClick={() => toggleFavourite(team.team)}
-                        className="ml-auto pl-2 leading-none transition-colors"
-                        aria-label={isFav ? `Unstar ${team.team}` : `Star ${team.team}`}
-                      >
-                        <Star
-                          size={13}
-                          className={isFav ? 'fill-amber-400 text-amber-400' : 'text-gray-600 hover:text-gray-400'}
-                        />
-                      </button>
                     </div>
                   </td>
                   <td className="px-2 py-2 text-center text-gray-400">{team.played}</td>
@@ -89,10 +77,9 @@ function GroupCard({ group, favourites, toggleFavourite }: GroupCardProps) {
 
 interface Props {
   favourites: Set<string>
-  toggleFavourite: (team: string) => void
 }
 
-export default function StandingsTab({ favourites, toggleFavourite }: Props) {
+export default function StandingsTab({ favourites }: Props) {
   const [groups, setGroups] = useState<Group[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -110,7 +97,7 @@ export default function StandingsTab({ favourites, toggleFavourite }: Props) {
   return (
     <div className="px-4 py-4 space-y-4">
       {groups.map(group => (
-        <GroupCard key={group.group} group={group} favourites={favourites} toggleFavourite={toggleFavourite} />
+        <GroupCard key={group.group} group={group} favourites={favourites} />
       ))}
     </div>
   )

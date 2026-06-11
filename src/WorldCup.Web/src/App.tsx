@@ -66,7 +66,7 @@ export default function App() {
       {/* Page content */}
       <main className="flex-1 max-w-2xl w-full mx-auto pb-20">
         {tab === 'games'      && <GamesTab favourites={favourites} toggleFavourite={toggleFavourite} />}
-        {tab === 'standings'  && <StandingsTab favourites={favourites} toggleFavourite={toggleFavourite} />}
+        {tab === 'standings'  && <StandingsTab favourites={favourites} />}
         {tab === 'bracket'    && <BracketTab />}
         {tab === 'favourites' && <FavouritesTab favourites={favourites} toggleFavourite={toggleFavourite} />}
       </main>

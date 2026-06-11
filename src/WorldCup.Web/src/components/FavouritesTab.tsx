@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Star } from 'lucide-react'
 import { api } from '../api'
 import type { Game, Group, TeamStanding } from '../types'
-import { GameCard } from './GamesTab'
+import { GameCard, useNow } from './GamesTab'
 import GameDetailSheet from './GameDetailSheet'
 
 function formatDate(iso: string, timezone: string) {
@@ -65,6 +65,7 @@ export default function FavouritesTab({ favourites, toggleFavourite }: Props) {
   const [groups, setGroups] = useState<Group[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Game | null>(null)
+  const now = useNow()
 
   useEffect(() => {
     Promise.all([api.games(), api.groups()])
@@ -81,7 +82,7 @@ export default function FavouritesTab({ favourites, toggleFavourite }: Props) {
         <Star size={48} className="text-gray-600" />
         <p className="text-white font-semibold">No favourites yet</p>
         <p className="text-sm text-gray-400">
-          Tap the star next to a team in Games or Standings to follow them here.
+          Tap a game and star a team in the detail sheet to follow them here.
         </p>
       </div>
     )
@@ -153,7 +154,7 @@ export default function FavouritesTab({ favourites, toggleFavourite }: Props) {
                   </h3>
                   <div className="space-y-2">
                     {dayGames.map(game => (
-                      <GameCard key={game.id} game={game} favourites={favourites} toggleFavourite={toggleFavourite} onClick={() => setSelected(game)} />
+                      <GameCard key={game.id} game={game} favourites={favourites} now={now} onClick={() => setSelected(game)} />
                     ))}
                   </div>
                 </div>
@@ -163,7 +164,7 @@ export default function FavouritesTab({ favourites, toggleFavourite }: Props) {
         )}
       </div>
 
-      {selected && <GameDetailSheet game={selected} onClose={() => setSelected(null)} />}
+      {selected && <GameDetailSheet game={selected} onClose={() => setSelected(null)} favourites={favourites} toggleFavourite={toggleFavourite} />}
     </>
   )
 }
