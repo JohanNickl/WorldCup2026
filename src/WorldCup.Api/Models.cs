@@ -9,10 +9,12 @@ record GameRecord(
     string City,
     string Country,
     int? HomeScore,
-    int? AwayScore
+    int? AwayScore,
+    string Status = "scheduled"
 );
 
-record ScoreRequest(int HomeScore, int AwayScore);
+// Status: "scheduled" | "live" | "finished"
+record ScoreRequest(int HomeScore, int AwayScore, string Status = "finished");
 
 record TeamInfo(string Team, string Flag);
 

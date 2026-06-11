@@ -1,24 +1,15 @@
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 
 public static class AdminEndpoints
 {
-    private static readonly SemaphoreSlim WriteLock = new(1, 1);
-    private static readonly JsonSerializerOptions JsonOpts = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
-        WriteIndented = true,
-    };
-
     public static void MapAdminEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapPatch("/api/admin/games/{id:int}/score", async (
             int id,
             ScoreRequest body,
             HttpContext ctx,
-            IWebHostEnvironment env,
+            GameDataService gameData,
             IConfiguration config) =>
         {
             var expected = config["AdminKey"] ?? "";
@@ -29,30 +20,10 @@ public static class AdminEndpoints
             if (body.HomeScore < 0 || body.AwayScore < 0)
                 return Results.BadRequest("Scores must be non-negative integers.");
 
-            var path = Path.Combine(env.ContentRootPath, "Data", "games.json");
-
-            await WriteLock.WaitAsync();
-            try
-            {
-                var json = await File.ReadAllTextAsync(path);
-                var games = JsonSerializer.Deserialize<List<GameRecord>>(json, JsonOpts);
-                if (games is null) return Results.Problem("Failed to read games data.");
-
-                var index = games.FindIndex(g => g.Id == id);
-                if (index < 0) return Results.NotFound();
-
-                games[index] = games[index] with { HomeScore = body.HomeScore, AwayScore = body.AwayScore };
-
-                var tmpPath = path + ".tmp";
-                await File.WriteAllTextAsync(tmpPath, JsonSerializer.Serialize(games, JsonOpts));
-                File.Move(tmpPath, path, overwrite: true);
-
-                return Results.Ok(new { id, body.HomeScore, body.AwayScore });
-            }
-            finally
-            {
-                WriteLock.Release();
-            }
+            var updated = await gameData.UpdateGameAsync(id, body.HomeScore, body.AwayScore, body.Status);
+            return updated
+                ? Results.Ok(new { id, body.HomeScore, body.AwayScore, body.Status })
+                : Results.NotFound();
         });
     }
 

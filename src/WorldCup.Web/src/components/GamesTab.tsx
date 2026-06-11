@@ -32,9 +32,10 @@ export function GameCard({ game, favourites, toggleFavourite, onClick }: {
   toggleFavourite?: (team: string) => void
   onClick: () => void
 }) {
-  const hasScore = game.homeScore !== null && game.awayScore !== null
-  const homeFav = favourites.has(game.homeTeam)
-  const awayFav = favourites.has(game.awayTeam)
+  const isLive     = game.status === 'live'
+  const showScore  = game.homeScore !== null && game.awayScore !== null
+  const homeFav    = favourites.has(game.homeTeam)
+  const awayFav    = favourites.has(game.awayTeam)
   const isFavMatch = homeFav || awayFav
 
   function starButton(team: string, isFav: boolean, align: 'left' | 'right') {
@@ -65,7 +66,18 @@ export function GameCard({ game, favourites, toggleFavourite, onClick }: {
         <span className="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">
           Group {game.group}
         </span>
-        <span className="text-xs text-gray-400">{formatUserTime(game.date)}</span>
+        <div className="flex items-center gap-2">
+          {isLive && (
+            <span className="flex items-center gap-1 text-xs font-bold text-red-400">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-400" />
+              </span>
+              LIVE
+            </span>
+          )}
+          <span className="text-xs text-gray-400">{formatUserTime(game.date)}</span>
+        </div>
       </div>
 
       <div className="flex items-center justify-between gap-2">
@@ -73,8 +85,8 @@ export function GameCard({ game, favourites, toggleFavourite, onClick }: {
           {game.homeTeam}
           {toggleFavourite && starButton(game.homeTeam, homeFav, 'right')}
         </span>
-        {hasScore ? (
-          <span className="text-base font-bold text-white px-3">
+        {showScore ? (
+          <span className={`text-base font-bold px-3 tabular-nums ${isLive ? 'text-emerald-400' : 'text-white'}`}>
             {game.homeScore} – {game.awayScore}
           </span>
         ) : (

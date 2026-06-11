@@ -59,6 +59,7 @@ interface Props {
 }
 
 export default function GameDetailSheet({ game, onClose }: Props) {
+  const isLive   = game.status === 'live'
   const hasScore = game.homeScore !== null && game.awayScore !== null
 
   return createPortal(
@@ -88,11 +89,22 @@ export default function GameDetailSheet({ game, onClose }: Props) {
           <div className="flex items-center justify-between gap-4">
             <span className="flex-1 text-right text-xl font-bold text-white leading-tight">{game.homeTeam}</span>
             {hasScore ? (
-              <span className="text-3xl font-black text-white tabular-nums px-2">
+              <span className={`text-3xl font-black tabular-nums px-2 ${isLive ? 'text-emerald-400' : 'text-white'}`}>
                 {game.homeScore} – {game.awayScore}
               </span>
             ) : (
-              <span className="text-2xl font-black text-gray-600 px-2">vs</span>
+              <div className="flex flex-col items-center gap-1 px-2">
+                {isLive && (
+                  <span className="flex items-center gap-1 text-xs font-bold text-red-400">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-400" />
+                    </span>
+                    LIVE
+                  </span>
+                )}
+                <span className="text-2xl font-black text-gray-600">vs</span>
+              </div>
             )}
             <span className="flex-1 text-left text-xl font-bold text-white leading-tight">{game.awayTeam}</span>
           </div>

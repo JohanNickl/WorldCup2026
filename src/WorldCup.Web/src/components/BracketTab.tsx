@@ -6,9 +6,15 @@ function formatShortDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
+// Codes that haven't been resolved to a real team yet
+function isPlaceholder(name: string) {
+  return /^[123][A-L]|^W |^L /.test(name)
+}
+
 function MatchCard({ match }: { match: BracketMatch }) {
-  const hasScore = match.homeScore !== null && match.awayScore !== null
-  const isLabel = match.homeTeam.startsWith('W ') || match.homeTeam.startsWith('L ')
+  const hasScore    = match.homeScore !== null && match.awayScore !== null
+  const homePending = isPlaceholder(match.homeTeam)
+  const awayPending = isPlaceholder(match.awayTeam)
 
   return (
     <div className="bg-gray-900 border border-gray-700 rounded-lg w-40 text-xs overflow-hidden">
@@ -16,13 +22,13 @@ function MatchCard({ match }: { match: BracketMatch }) {
         {formatShortDate(match.date)}
       </div>
       <div className="flex items-center justify-between px-2 py-1.5 border-b border-gray-800">
-        <span className={`truncate flex-1 ${isLabel ? 'text-gray-600 italic' : 'font-medium text-gray-200'}`}>
+        <span className={`truncate flex-1 ${homePending ? 'text-gray-600 italic' : 'font-medium text-gray-200'}`}>
           {match.homeTeam}
         </span>
         {hasScore && <span className="ml-1 font-bold text-white tabular-nums">{match.homeScore}</span>}
       </div>
       <div className="flex items-center justify-between px-2 py-1.5">
-        <span className={`truncate flex-1 ${isLabel ? 'text-gray-600 italic' : 'font-medium text-gray-200'}`}>
+        <span className={`truncate flex-1 ${awayPending ? 'text-gray-600 italic' : 'font-medium text-gray-200'}`}>
           {match.awayTeam}
         </span>
         {hasScore && <span className="ml-1 font-bold text-white tabular-nums">{match.awayScore}</span>}
