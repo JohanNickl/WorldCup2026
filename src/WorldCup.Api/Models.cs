@@ -1,4 +1,4 @@
-record GameRecord(
+public record GameRecord(
     int Id,
     string Date,
     string Timezone,
@@ -14,8 +14,8 @@ record GameRecord(
 );
 
 // Status: "scheduled" | "live" | "finished"
-record ScoreRequest(int HomeScore, int AwayScore, string Status = "finished");
+public record ScoreRequest(int HomeScore, int AwayScore, string Status = "finished");
 
-record TeamInfo(string Team, string Flag);
+public record TeamInfo(string Team, string Flag);
 
-record GroupDef(string Group, List<TeamInfo> Teams);
+public record GroupDef(string Group, List<TeamInfo> Teams);
