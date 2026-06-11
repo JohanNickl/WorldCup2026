@@ -10,6 +10,7 @@ export interface Game {
   country: string
   homeScore: number | null
   awayScore: number | null
+  status: 'scheduled' | 'live' | 'finished'
 }
 
 export interface TeamStanding {
