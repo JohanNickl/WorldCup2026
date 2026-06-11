@@ -18,8 +18,12 @@ RUN dotnet publish WorldCup.Api/WorldCup.Api.csproj \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 COPY --from=api-publish /app/publish ./
+# Preserve bundled seed data so a volume mount on /app/Data doesn't erase the defaults
+RUN cp -r /app/Data /app/Data.seed
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 ENV ASPNETCORE_URLS=http://+:8080
 
 EXPOSE 8080
-ENTRYPOINT ["dotnet", "WorldCup.Api.dll"]
+ENTRYPOINT ["/app/entrypoint.sh"]
