@@ -23,7 +23,10 @@ public class GameDataService
         return JsonSerializer.Deserialize<List<GameRecord>>(json, JsonOpts) ?? [];
     }
 
-    public async Task<bool> UpdateGameAsync(int id, int homeScore, int awayScore, string status)
+    public async Task<bool> UpdateGameAsync(
+        int id, int homeScore, int awayScore, string status,
+        string? referee = null, int? attendance = null,
+        int? minute = null, List<GoalEvent>? goals = null)
     {
         await _writeLock.WaitAsync();
         try
@@ -35,7 +38,17 @@ public class GameDataService
             var index = games.FindIndex(g => g.Id == id);
             if (index < 0) return false;
 
-            games[index] = games[index] with { HomeScore = homeScore, AwayScore = awayScore, Status = status };
+            var existing = games[index];
+            games[index] = existing with
+            {
+                HomeScore  = homeScore,
+                AwayScore  = awayScore,
+                Status     = status,
+                Referee    = referee    ?? existing.Referee,
+                Attendance = attendance ?? existing.Attendance,
+                Minute     = minute,
+                Goals      = goals      ?? existing.Goals,
+            };
 
             var tmp = _gamesPath + ".tmp";
             await File.WriteAllTextAsync(tmp, JsonSerializer.Serialize(games, JsonOpts));

@@ -91,7 +91,15 @@ public class ScoreWorker(
                 var homeScore = result.HomeScore ?? match.HomeScore ?? 0;
                 var awayScore = result.AwayScore ?? match.AwayScore ?? 0;
 
-                await gameData.UpdateGameAsync(match.Id, homeScore, awayScore, ourStatus);
+                // Resolve goal team names to our internal names so the UI can align them correctly
+                var goals = result.Goals?.Select(g => g with {
+                    Team = ResolveGoalTeam(g.Team, match)
+                }).ToList();
+
+                await gameData.UpdateGameAsync(
+                    match.Id, homeScore, awayScore, ourStatus,
+                    result.Referee, result.Attendance, result.Minute, goals);
+
                 logger.LogInformation(
                     "Updated game {Id}: {Home} {HomeScore}–{AwayScore} {Away} ({Status})",
                     match.Id, match.HomeTeam, homeScore, awayScore, match.AwayTeam, ourStatus);
@@ -101,6 +109,24 @@ public class ScoreWorker(
         {
             logger.LogError(ex, "Score worker poll error");
         }
+    }
+
+    // Map an API goal team name to our internal home/away team name using the same config mapping.
+    private string ResolveGoalTeam(string apiName, GameRecord match)
+    {
+        if (Normalize(apiName) == Normalize(match.HomeTeam)) return match.HomeTeam;
+        if (Normalize(apiName) == Normalize(match.AwayTeam)) return match.AwayTeam;
+
+        var section = config.GetSection("FootballApi:TeamNameMap");
+        foreach (var entry in section.GetChildren())
+        {
+            if (!string.Equals(entry["ApiName"], apiName, StringComparison.OrdinalIgnoreCase)) continue;
+            var ourName = entry["OurName"] ?? apiName;
+            if (Normalize(ourName) == Normalize(match.HomeTeam)) return match.HomeTeam;
+            if (Normalize(ourName) == Normalize(match.AwayTeam)) return match.AwayTeam;
+        }
+
+        return apiName;
     }
 
     // Attempt matching using optional name-map overrides in config:

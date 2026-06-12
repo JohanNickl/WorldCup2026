@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom'
-import { Calendar, MapPin, CalendarPlus, Star, X } from 'lucide-react'
-import type { Game } from '../types'
+import { Calendar, MapPin, CalendarPlus, Star, X, User, Users } from 'lucide-react'
+import type { Game, GoalEvent } from '../types'
 
 function formatFullDate(iso: string, timezone: string) {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -20,9 +20,19 @@ function formatUserTime(iso: string) {
   })
 }
 
+function fmtMinute(g: GoalEvent) {
+  return g.injuryTime ? `${g.minute}+${g.injuryTime}'` : `${g.minute}'`
+}
+
+function fmtScorer(g: GoalEvent) {
+  if (g.type === 'OWN_GOAL') return `${g.scorer} (og)`
+  if (g.type === 'PENALTY')  return `${g.scorer} (pen)`
+  return g.scorer
+}
+
 function addToCalendar(game: Game) {
   const start = new Date(game.date)
-  const end = new Date(start.getTime() + 2 * 60 * 60 * 1000) // 2 hours
+  const end = new Date(start.getTime() + 2 * 60 * 60 * 1000)
 
   const pad = (n: number) => String(n).padStart(2, '0')
   const fmtUtc = (d: Date) =>
@@ -61,10 +71,11 @@ interface Props {
 }
 
 export default function GameDetailSheet({ game, onClose, favourites, toggleFavourite }: Props) {
-  const isLive    = game.status === 'live'
-  const hasScore  = game.homeScore !== null && game.awayScore !== null
-  const homeFav   = favourites?.has(game.homeTeam) ?? false
-  const awayFav   = favourites?.has(game.awayTeam) ?? false
+  const isLive   = game.status === 'live'
+  const hasScore = game.homeScore !== null && game.awayScore !== null
+  const homeFav  = favourites?.has(game.homeTeam) ?? false
+  const awayFav  = favourites?.has(game.awayTeam) ?? false
+  const goals    = game.goals ?? []
 
   function StarBtn({ team, isFav }: { team: string; isFav: boolean }) {
     if (!toggleFavourite) return null
@@ -93,7 +104,7 @@ export default function GameDetailSheet({ game, onClose, favourites, toggleFavou
           <div className="w-10 h-1 rounded-full bg-gray-700" />
         </div>
 
-        <div className="px-6 pb-10 pt-2 space-y-6">
+        <div className="px-6 pb-10 pt-2 space-y-5">
           {/* Group badge */}
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2.5 py-1 rounded-full">
@@ -132,6 +143,28 @@ export default function GameDetailSheet({ game, onClose, favourites, toggleFavou
             </span>
           </div>
 
+          {/* Goal scorers */}
+          {goals.length > 0 && (
+            <div className="bg-gray-800 rounded-xl px-4 py-3 space-y-1.5">
+              {[...goals].sort((a, b) => a.minute - b.minute).map((g, i) => {
+                const isHome = g.team === game.homeTeam
+                return (
+                  <div key={i} className="flex items-center gap-1 text-sm">
+                    <span className="flex-1 text-right text-gray-200 truncate">
+                      {isHome ? fmtScorer(g) : ''}
+                    </span>
+                    <span className="text-gray-500 font-mono text-xs w-20 text-center shrink-0">
+                      ⚽ {fmtMinute(g)}
+                    </span>
+                    <span className="flex-1 text-left text-gray-200 truncate">
+                      {!isHome ? fmtScorer(g) : ''}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
           {/* Match details */}
           <div className="bg-gray-800 rounded-xl divide-y divide-gray-700 text-sm">
             <div className="flex items-center gap-3 px-4 py-3">
@@ -148,6 +181,18 @@ export default function GameDetailSheet({ game, onClose, favourites, toggleFavou
                 <div className="text-gray-400 text-xs">{game.city}, {game.country}</div>
               </div>
             </div>
+            {game.referee && (
+              <div className="flex items-center gap-3 px-4 py-3">
+                <User size={18} className="text-gray-400 shrink-0" />
+                <div className="text-gray-200">{game.referee}</div>
+              </div>
+            )}
+            {game.attendance != null && (
+              <div className="flex items-center gap-3 px-4 py-3">
+                <Users size={18} className="text-gray-400 shrink-0" />
+                <div className="text-gray-200">{game.attendance.toLocaleString()} attendance</div>
+              </div>
+            )}
           </div>
 
           {/* Add to calendar */}

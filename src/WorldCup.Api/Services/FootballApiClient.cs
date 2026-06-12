@@ -32,26 +32,66 @@ public class FootballApiClient(IHttpClientFactory factory, IConfiguration config
         }
     }
 
-    private static ExternalMatchResult ToResult(MatchDto m) => new(
-        m.HomeTeam?.ShortName ?? m.HomeTeam?.Name ?? "",
-        m.AwayTeam?.ShortName ?? m.AwayTeam?.Name ?? "",
-        m.Score?.FullTime?.Home,
-        m.Score?.FullTime?.Away,
-        m.Status ?? "SCHEDULED"
-    );
+    private static ExternalMatchResult ToResult(MatchDto m)
+    {
+        var goals = m.Goals?
+            .Where(g => g.Scorer?.Name != null && g.Minute.HasValue && g.Team != null)
+            .Select(g => new GoalEvent(
+                g.Scorer!.Name!,
+                g.Minute!.Value,
+                g.InjuryTime,
+                g.Team!.ShortName ?? g.Team.Name ?? "",
+                g.Type ?? "REGULAR"))
+            .ToList();
+
+        var referee = m.Referees?.FirstOrDefault(r => r.Name != null);
+        var refStr = referee is null ? null
+            : referee.Nationality is null ? referee.Name
+            : $"{referee.Name} ({referee.Nationality})";
+
+        return new ExternalMatchResult(
+            m.HomeTeam?.ShortName ?? m.HomeTeam?.Name ?? "",
+            m.AwayTeam?.ShortName ?? m.AwayTeam?.Name ?? "",
+            m.Score?.FullTime?.Home,
+            m.Score?.FullTime?.Away,
+            m.Status ?? "SCHEDULED",
+            refStr,
+            m.Attendance,
+            m.Minute,
+            goals
+        );
+    }
 
     private record MatchesResponse(
         [property: JsonPropertyName("matches")] List<MatchDto>? Matches);
 
     private record MatchDto(
-        [property: JsonPropertyName("status")] string? Status,
-        [property: JsonPropertyName("homeTeam")] TeamDto? HomeTeam,
-        [property: JsonPropertyName("awayTeam")] TeamDto? AwayTeam,
-        [property: JsonPropertyName("score")] ScoreDto? Score);
+        [property: JsonPropertyName("status")]     string? Status,
+        [property: JsonPropertyName("minute")]     int? Minute,
+        [property: JsonPropertyName("attendance")] int? Attendance,
+        [property: JsonPropertyName("homeTeam")]   TeamDto? HomeTeam,
+        [property: JsonPropertyName("awayTeam")]   TeamDto? AwayTeam,
+        [property: JsonPropertyName("score")]      ScoreDto? Score,
+        [property: JsonPropertyName("goals")]      List<GoalDto>? Goals,
+        [property: JsonPropertyName("referees")]   List<RefereeDto>? Referees);
 
     private record TeamDto(
-        [property: JsonPropertyName("name")] string? Name,
+        [property: JsonPropertyName("name")]      string? Name,
         [property: JsonPropertyName("shortName")] string? ShortName);
+
+    private record GoalDto(
+        [property: JsonPropertyName("minute")]     int? Minute,
+        [property: JsonPropertyName("injuryTime")] int? InjuryTime,
+        [property: JsonPropertyName("type")]       string? Type,
+        [property: JsonPropertyName("team")]       TeamDto? Team,
+        [property: JsonPropertyName("scorer")]     PersonDto? Scorer);
+
+    private record RefereeDto(
+        [property: JsonPropertyName("name")]        string? Name,
+        [property: JsonPropertyName("nationality")] string? Nationality);
+
+    private record PersonDto(
+        [property: JsonPropertyName("name")] string? Name);
 
     private record ScoreDto(
         [property: JsonPropertyName("fullTime")] ScoreValueDto? FullTime);
@@ -66,5 +106,9 @@ public record ExternalMatchResult(
     string AwayTeam,
     int? HomeScore,
     int? AwayScore,
-    string ApiStatus
+    string ApiStatus,
+    string? Referee,
+    int? Attendance,
+    int? Minute,
+    List<GoalEvent>? Goals
 );

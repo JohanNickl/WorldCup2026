@@ -1,3 +1,11 @@
+export interface GoalEvent {
+  scorer: string
+  minute: number
+  injuryTime?: number
+  team: string
+  type: string  // REGULAR | OWN_GOAL | PENALTY
+}
+
 export interface Game {
   id: number
   date: string
@@ -11,6 +19,10 @@ export interface Game {
   homeScore: number | null
   awayScore: number | null
   status: 'scheduled' | 'live' | 'finished'
+  referee?: string
+  attendance?: number
+  minute?: number
+  goals?: GoalEvent[]
 }
 
 export interface TeamStanding {

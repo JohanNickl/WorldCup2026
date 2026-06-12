@@ -1,3 +1,11 @@
+public record GoalEvent(
+    string Scorer,
+    int Minute,
+    int? InjuryTime,
+    string Team,
+    string Type   // REGULAR | OWN_GOAL | PENALTY
+);
+
 public record GameRecord(
     int Id,
     string Date,
@@ -10,7 +18,11 @@ public record GameRecord(
     string Country,
     int? HomeScore,
     int? AwayScore,
-    string Status = "scheduled"
+    string Status = "scheduled",
+    string? Referee = null,
+    int? Attendance = null,
+    int? Minute = null,
+    List<GoalEvent>? Goals = null
 );
 
 // Status: "scheduled" | "live" | "finished"

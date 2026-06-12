@@ -60,7 +60,7 @@ export function GameCard({ game, favourites, now, onClick }: {
   const diffMs  = gameMs - now
   const THREE_H = 3 * 60 * 60 * 1000
   const timer   = isLive
-    ? fmtElapsed(now - gameMs)
+    ? game.minute != null ? `${game.minute}'` : fmtElapsed(now - gameMs)
     : diffMs > 0 && diffMs <= THREE_H
       ? fmtCountdown(diffMs)
       : null
