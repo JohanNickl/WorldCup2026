@@ -34,22 +34,38 @@ public class ScoreWorker(
             var games = await gameData.ReadGamesAsync();
             var now = DateTimeOffset.UtcNow;
 
-            // Only call the external API when a match is live or about to start
-            var hasRelevantGame = games.Any(g =>
-            {
-                var kickoff = DateTimeOffset.Parse(g.Date, null, DateTimeStyles.RoundtripKind);
-                return kickoff >= now.AddHours(-3) && kickoff <= now.AddMinutes(15);
-            });
+            // Active window: game is live or about to start.
+            // Catch-up window: unscored game kicked off in the last 12 h (recovers after server restart).
+            var relevant = games
+                .Select(g => (game: g, kickoff: DateTimeOffset.Parse(g.Date, null, DateTimeStyles.RoundtripKind)))
+                .Where(x =>
+                {
+                    var inActiveWindow = x.kickoff >= now.AddHours(-3) && x.kickoff <= now.AddMinutes(15);
+                    var needsCatchUp   = x.game.HomeScore is null
+                                        && x.kickoff >= now.AddHours(-12)
+                                        && x.kickoff < now.AddHours(-2);
+                    return inActiveWindow || needsCatchUp;
+                })
+                .ToList();
 
-            if (!hasRelevantGame)
+            if (relevant.Count == 0)
             {
                 logger.LogDebug("No live/imminent games – skipping API call");
                 return;
             }
 
-            logger.LogInformation("Polling football API for today's scores");
-            var todayDate = DateOnly.FromDateTime(now.UtcDateTime);
-            var results = await apiClient.GetMatchesAsync(todayDate);
+            logger.LogInformation("Polling football API for scores");
+
+            // Query each distinct UTC date that has relevant games (not just "today").
+            var dates = relevant
+                .Select(x => DateOnly.FromDateTime(x.kickoff.UtcDateTime))
+                .Distinct();
+
+            var allResults = new List<ExternalMatchResult>();
+            foreach (var date in dates)
+                allResults.AddRange(await apiClient.GetMatchesAsync(date));
+
+            var results = allResults;
 
             foreach (var result in results)
             {
