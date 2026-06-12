@@ -35,14 +35,14 @@ public class ScoreWorker(
             var now = DateTimeOffset.UtcNow;
 
             // Active window: game is live or about to start.
-            // Catch-up window: unscored game kicked off in the last 12 h (recovers after server restart).
+            // Catch-up window: unscored game kicked off in the last 7 days (survives long outages/redeploys).
             var relevant = games
                 .Select(g => (game: g, kickoff: DateTimeOffset.Parse(g.Date, null, DateTimeStyles.RoundtripKind)))
                 .Where(x =>
                 {
                     var inActiveWindow = x.kickoff >= now.AddHours(-3) && x.kickoff <= now.AddMinutes(15);
                     var needsCatchUp   = x.game.HomeScore is null
-                                        && x.kickoff >= now.AddHours(-12)
+                                        && x.kickoff >= now.AddDays(-7)
                                         && x.kickoff < now.AddHours(-2);
                     return inActiveWindow || needsCatchUp;
                 })
