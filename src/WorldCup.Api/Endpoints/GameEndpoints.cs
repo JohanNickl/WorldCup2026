@@ -9,10 +9,7 @@ public static class GameEndpoints
 
     public static void MapGameEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/games", async (GameDataService gameData) =>
-        {
-            var games = await gameData.ReadGamesAsync();
-            return Results.Json(games, JsonOpts);
-        });
+        app.MapGet("/api/games", (GameDataService gameData) =>
+            Results.Json(gameData.GetGames(), JsonOpts));
     }
 }

@@ -11,8 +11,11 @@ export interface Game {
   date: string
   timezone: string
   group: string
+  stage: string
   homeTeam: string
+  homeCrest: string
   awayTeam: string
+  awayCrest: string
   venue: string
   city: string
   country: string
@@ -27,7 +30,7 @@ export interface Game {
 
 export interface TeamStanding {
   team: string
-  flag: string
+  crest: string
   played: number
   won: number
   drawn: number
@@ -47,7 +50,9 @@ export interface BracketMatch {
   id: string
   date: string
   homeTeam: string
+  homeCrest: string
   awayTeam: string
+  awayCrest: string
   homeScore: number | null
   awayScore: number | null
   venue: string

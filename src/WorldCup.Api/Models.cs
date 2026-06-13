@@ -11,8 +11,11 @@ public record GameRecord(
     string Date,
     string Timezone,
     string Group,
+    string Stage,
     string HomeTeam,
+    string HomeCrest,
     string AwayTeam,
+    string AwayCrest,
     string Venue,
     string City,
     string Country,
@@ -24,10 +27,3 @@ public record GameRecord(
     int? Minute = null,
     List<GoalEvent>? Goals = null
 );
-
-// Status: "scheduled" | "live" | "finished"
-public record ScoreRequest(int HomeScore, int AwayScore, string Status = "finished");
-
-public record TeamInfo(string Team, string Flag);
-
-public record GroupDef(string Group, List<TeamInfo> Teams);

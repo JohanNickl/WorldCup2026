@@ -113,24 +113,28 @@ export function GameCard({ game, favourites, now, onClick }: {
       </div>
 
       <div className="flex items-center justify-between gap-2">
-        <span className="flex-1 text-right text-sm font-semibold text-gray-100">
-          {game.homeTeam}
-        </span>
+        <div className="flex-1 flex items-center justify-end gap-1.5 min-w-0">
+          <span className="text-sm font-semibold text-gray-100 truncate">{game.homeTeam}</span>
+          {game.homeCrest && <img src={game.homeCrest} alt="" className="w-5 h-5 object-contain shrink-0" />}
+        </div>
         {showScore ? (
-          <span className={`text-base font-bold px-3 tabular-nums ${isLive ? 'text-emerald-400' : 'text-white'}`}>
+          <span className={`text-base font-bold px-3 tabular-nums shrink-0 ${isLive ? 'text-emerald-400' : 'text-white'}`}>
             {game.homeScore} – {game.awayScore}
           </span>
         ) : (
-          <span className="text-sm text-gray-600 px-3">vs</span>
+          <span className="text-sm text-gray-600 px-3 shrink-0">vs</span>
         )}
-        <span className="flex-1 text-left text-sm font-semibold text-gray-100">
-          {game.awayTeam}
-        </span>
+        <div className="flex-1 flex items-center gap-1.5 min-w-0">
+          {game.awayCrest && <img src={game.awayCrest} alt="" className="w-5 h-5 object-contain shrink-0" />}
+          <span className="text-sm font-semibold text-gray-100 truncate">{game.awayTeam}</span>
+        </div>
       </div>
 
-      <div className="mt-2 text-xs text-gray-300 text-center">
-        {game.venue} · {game.city}, {game.country}
-      </div>
+      {game.venue && (
+        <div className="mt-2 text-xs text-gray-300 text-center">
+          {game.venue}{game.city ? ` · ${game.city}` : ''}{game.country ? `, ${game.country}` : ''}
+        </div>
+      )}
 
       {isLive && goals.length > 0 && (
         <div className="mt-2 pt-2 border-t border-gray-800 flex gap-2 text-xs text-gray-400">

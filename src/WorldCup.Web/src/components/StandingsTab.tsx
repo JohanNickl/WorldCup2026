@@ -49,7 +49,9 @@ function GroupCard({ group, favourites }: GroupCardProps) {
                       {i < 2 && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />}
                       {i === 2 && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 shrink-0" />}
                       {i === 3 && <span className="w-1.5 h-1.5 rounded-full bg-transparent shrink-0" />}
-                      <span>{team.flag}</span>
+                      {team.crest
+                        ? <img src={team.crest} alt="" className="w-5 h-5 object-contain shrink-0" />
+                        : null}
                       <span>{team.team}</span>
                     </div>
                   </td>

@@ -32,7 +32,9 @@ function TeamCard({ team, groupName, position, onUnstar }: TeamCardProps) {
   const suffix = position === 1 ? 'st' : position === 2 ? 'nd' : position === 3 ? 'rd' : 'th'
   return (
     <div className="bg-gray-900 rounded-xl border border-amber-400/30 px-4 py-3 flex items-center gap-3">
-      <span className="text-2xl leading-none">{team.flag}</span>
+      {team.crest
+        ? <img src={team.crest} alt="" className="w-8 h-8 object-contain shrink-0" />
+        : <span className="w-8 h-8 shrink-0" />}
       <div className="flex-1 min-w-0">
         <div className="text-sm font-semibold text-white truncate">{team.team}</div>
         <div className="text-xs text-gray-400 mt-0.5">

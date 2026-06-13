@@ -1,10 +1,9 @@
-import { useState, useRef } from 'react'
-import { CalendarDays, BarChart3, Trophy, Star, Globe } from 'lucide-react'
+import { useState } from 'react'
+import { CalendarDays, BarChart3, Trophy, Star } from 'lucide-react'
 import GamesTab from './components/GamesTab'
 import StandingsTab from './components/StandingsTab'
 import BracketTab from './components/BracketTab'
 import FavouritesTab from './components/FavouritesTab'
-import AdminPanel from './components/AdminPanel'
 
 type Tab = 'games' | 'standings' | 'bracket' | 'favourites'
 
@@ -17,7 +16,6 @@ const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('games')
-  const [showAdmin, setShowAdmin] = useState(false)
   const [favourites, setFavourites] = useState<Set<string>>(() => {
     try {
       const stored = localStorage.getItem('favouriteTeams')
@@ -26,8 +24,6 @@ export default function App() {
       return new Set()
     }
   })
-  const tapCount = useRef(0)
-  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function toggleFavourite(team: string) {
     setFavourites(prev => {
@@ -39,23 +35,11 @@ export default function App() {
     })
   }
 
-  function handleGlobeTap() {
-    tapCount.current += 1
-    if (tapTimer.current) clearTimeout(tapTimer.current)
-    tapTimer.current = setTimeout(() => { tapCount.current = 0 }, 2000)
-    if (tapCount.current >= 5) {
-      tapCount.current = 0
-      if (tapTimer.current) clearTimeout(tapTimer.current)
-      setShowAdmin(true)
-    }
-  }
-
   return (
     <div className="flex flex-col min-h-svh bg-gray-950">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-gray-900 border-b border-gray-800 shadow-lg">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Globe size={24} className="cursor-pointer select-none text-gray-300 shrink-0" onClick={handleGlobeTap} />
           <div>
             <h1 className="text-base font-bold leading-tight text-white">FIFA World Cup 2026</h1>
             <p className="text-xs text-gray-400">USA · Canada · Mexico</p>
@@ -89,8 +73,6 @@ export default function App() {
           ))}
         </div>
       </nav>
-
-      {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} />}
     </div>
   )
 }

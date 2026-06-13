@@ -178,13 +178,19 @@ export default function GameDetailSheet({ game, onClose, favourites, toggleFavou
                 <div className="text-gray-400 text-xs">{formatTime(game.date, game.timezone)} venue time · {formatUserTime(game.date)} your time</div>
               </div>
             </div>
-            <div className="flex items-center gap-3 px-4 py-3">
-              <MapPin size={18} className="text-gray-400 shrink-0" />
-              <div>
-                <div className="text-gray-200 font-medium">{game.venue}</div>
-                <div className="text-gray-400 text-xs">{game.city}, {game.country}</div>
+            {game.venue && (
+              <div className="flex items-center gap-3 px-4 py-3">
+                <MapPin size={18} className="text-gray-400 shrink-0" />
+                <div>
+                  <div className="text-gray-200 font-medium">{game.venue}</div>
+                  {(game.city || game.country) && (
+                    <div className="text-gray-400 text-xs">
+                      {[game.city, game.country].filter(Boolean).join(', ')}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
             {game.referee && (
               <div className="flex items-center gap-3 px-4 py-3">
                 <User size={18} className="text-gray-400 shrink-0" />
