@@ -21,6 +21,19 @@ public class FootballApiClient(IHttpClientFactory factory, IConfiguration config
             }
 
             var json = await response.Content.ReadAsStringAsync();
+
+            // Log first match for diagnostics
+            try
+            {
+                var firstMatch = JsonDocument.Parse(json).RootElement
+                    .GetProperty("matches").EnumerateArray().FirstOrDefault();
+                logger.LogInformation("First match sample: {Sample}",
+                    firstMatch.ValueKind != JsonValueKind.Undefined
+                        ? firstMatch.GetRawText()[..Math.Min(500, firstMatch.GetRawText().Length)]
+                        : "(none)");
+            }
+            catch { /* best-effort */ }
+
             var data = JsonSerializer.Deserialize<MatchesResponse>(json, JsonOpts);
             return data?.Matches?.Select(ToGameRecord) ?? [];
         }
@@ -83,47 +96,68 @@ public class FootballApiClient(IHttpClientFactory factory, IConfiguration config
         );
     }
 
-    private record MatchesResponse(
-        [property: JsonPropertyName("matches")] List<MatchDto>? Matches);
+    // Use classes (not records) so System.Text.Json property-setter deserialization
+    // works cleanly — avoids the [property: JsonPropertyName] vs constructor-param
+    // attribute-target ambiguity with private nested records.
 
-    private record MatchDto(
-        [property: JsonPropertyName("id")]         int Id,
-        [property: JsonPropertyName("utcDate")]    string? UtcDate,
-        [property: JsonPropertyName("status")]     string? Status,
-        [property: JsonPropertyName("stage")]      string? Stage,
-        [property: JsonPropertyName("group")]      string? Group,
-        [property: JsonPropertyName("minute")]     int? Minute,
-        [property: JsonPropertyName("attendance")] int? Attendance,
-        [property: JsonPropertyName("homeTeam")]   TeamDto? HomeTeam,
-        [property: JsonPropertyName("awayTeam")]   TeamDto? AwayTeam,
-        [property: JsonPropertyName("score")]      ScoreDto? Score,
-        [property: JsonPropertyName("goals")]      List<GoalDto>? Goals,
-        [property: JsonPropertyName("referees")]   List<RefereeDto>? Referees,
-        [property: JsonPropertyName("venue")]      string? Venue);
+    private class MatchesResponse
+    {
+        [JsonPropertyName("matches")]
+        public List<MatchDto>? Matches { get; set; }
+    }
 
-    private record TeamDto(
-        [property: JsonPropertyName("name")]      string? Name,
-        [property: JsonPropertyName("shortName")] string? ShortName,
-        [property: JsonPropertyName("crest")]     string? Crest);
+    private class MatchDto
+    {
+        [JsonPropertyName("id")]         public int         Id         { get; set; }
+        [JsonPropertyName("utcDate")]    public string?     UtcDate    { get; set; }
+        [JsonPropertyName("status")]     public string?     Status     { get; set; }
+        [JsonPropertyName("stage")]      public string?     Stage      { get; set; }
+        [JsonPropertyName("group")]      public string?     Group      { get; set; }
+        [JsonPropertyName("minute")]     public int?        Minute     { get; set; }
+        [JsonPropertyName("attendance")] public int?        Attendance { get; set; }
+        [JsonPropertyName("homeTeam")]   public TeamDto?    HomeTeam   { get; set; }
+        [JsonPropertyName("awayTeam")]   public TeamDto?    AwayTeam   { get; set; }
+        [JsonPropertyName("score")]      public ScoreDto?   Score      { get; set; }
+        [JsonPropertyName("goals")]      public List<GoalDto>?   Goals     { get; set; }
+        [JsonPropertyName("referees")]   public List<RefereeDto>? Referees { get; set; }
+        [JsonPropertyName("venue")]      public string?     Venue      { get; set; }
+    }
 
-    private record GoalDto(
-        [property: JsonPropertyName("minute")]     int? Minute,
-        [property: JsonPropertyName("injuryTime")] int? InjuryTime,
-        [property: JsonPropertyName("type")]       string? Type,
-        [property: JsonPropertyName("team")]       TeamDto? Team,
-        [property: JsonPropertyName("scorer")]     PersonDto? Scorer);
+    private class TeamDto
+    {
+        [JsonPropertyName("name")]      public string? Name      { get; set; }
+        [JsonPropertyName("shortName")] public string? ShortName { get; set; }
+        [JsonPropertyName("crest")]     public string? Crest     { get; set; }
+    }
 
-    private record RefereeDto(
-        [property: JsonPropertyName("name")]        string? Name,
-        [property: JsonPropertyName("nationality")] string? Nationality);
+    private class GoalDto
+    {
+        [JsonPropertyName("minute")]     public int?      Minute     { get; set; }
+        [JsonPropertyName("injuryTime")] public int?      InjuryTime { get; set; }
+        [JsonPropertyName("type")]       public string?   Type       { get; set; }
+        [JsonPropertyName("team")]       public TeamDto?  Team       { get; set; }
+        [JsonPropertyName("scorer")]     public PersonDto? Scorer    { get; set; }
+    }
 
-    private record PersonDto(
-        [property: JsonPropertyName("name")] string? Name);
+    private class RefereeDto
+    {
+        [JsonPropertyName("name")]        public string? Name        { get; set; }
+        [JsonPropertyName("nationality")] public string? Nationality { get; set; }
+    }
 
-    private record ScoreDto(
-        [property: JsonPropertyName("fullTime")] ScoreValueDto? FullTime);
+    private class PersonDto
+    {
+        [JsonPropertyName("name")] public string? Name { get; set; }
+    }
 
-    private record ScoreValueDto(
-        [property: JsonPropertyName("home")] int? Home,
-        [property: JsonPropertyName("away")] int? Away);
+    private class ScoreDto
+    {
+        [JsonPropertyName("fullTime")] public ScoreValueDto? FullTime { get; set; }
+    }
+
+    private class ScoreValueDto
+    {
+        [JsonPropertyName("home")] public int? Home { get; set; }
+        [JsonPropertyName("away")] public int? Away { get; set; }
+    }
 }
