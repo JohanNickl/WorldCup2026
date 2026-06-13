@@ -5,15 +5,14 @@ public class FootballApiClient(IHttpClientFactory factory, IConfiguration config
 {
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public async Task<IEnumerable<ExternalMatchResult>> GetMatchesAsync(DateOnly date)
+    public async Task<IEnumerable<ExternalMatchResult>> GetMatchesAsync()
     {
         var code = config["FootballApi:CompetitionCode"] ?? "WC";
-        var dateStr = date.ToString("yyyy-MM-dd");
 
         try
         {
             using var http = factory.CreateClient("football-api");
-            var response = await http.GetAsync($"competitions/{code}/matches?dateFrom={dateStr}&dateTo={dateStr}");
+            var response = await http.GetAsync($"competitions/{code}/matches");
 
             if (!response.IsSuccessStatusCode)
             {
