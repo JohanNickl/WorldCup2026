@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom'
-import type { Game } from '../types'
+import { Calendar, MapPin, CalendarPlus, Star, X, User, Users } from 'lucide-react'
+import type { Game, GoalEvent } from '../types'
 
 function formatFullDate(iso: string, timezone: string) {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -19,9 +20,19 @@ function formatUserTime(iso: string) {
   })
 }
 
+function fmtMinute(g: GoalEvent) {
+  return g.injuryTime ? `${g.minute}+${g.injuryTime}'` : `${g.minute}'`
+}
+
+function fmtScorer(g: GoalEvent) {
+  if (g.type === 'OWN_GOAL') return `${g.scorer} (og)`
+  if (g.type === 'PENALTY')  return `${g.scorer} (pen)`
+  return g.scorer
+}
+
 function addToCalendar(game: Game) {
   const start = new Date(game.date)
-  const end = new Date(start.getTime() + 2 * 60 * 60 * 1000) // 2 hours
+  const end = new Date(start.getTime() + 2 * 60 * 60 * 1000)
 
   const pad = (n: number) => String(n).padStart(2, '0')
   const fmtUtc = (d: Date) =>
@@ -55,10 +66,29 @@ function addToCalendar(game: Game) {
 interface Props {
   game: Game
   onClose: () => void
+  favourites?: Set<string>
+  toggleFavourite?: (team: string) => void
 }
 
-export default function GameDetailSheet({ game, onClose }: Props) {
+export default function GameDetailSheet({ game, onClose, favourites, toggleFavourite }: Props) {
+  const isLive   = game.status === 'live'
   const hasScore = game.homeScore !== null && game.awayScore !== null
+  const homeFav  = favourites?.has(game.homeTeam) ?? false
+  const awayFav  = favourites?.has(game.awayTeam) ?? false
+  const goals    = game.goals ?? []
+
+  function StarBtn({ team, isFav }: { team: string; isFav: boolean }) {
+    if (!toggleFavourite) return null
+    return (
+      <button
+        onClick={() => toggleFavourite(team)}
+        aria-label={isFav ? `Unstar ${team}` : `Star ${team}`}
+        className="shrink-0 p-1 -m-1 transition-colors"
+      >
+        <Star size={18} className={isFav ? 'fill-amber-400 text-amber-400' : 'text-gray-600 hover:text-gray-400'} />
+      </button>
+    )
+  }
 
   return createPortal(
     <div
@@ -74,44 +104,105 @@ export default function GameDetailSheet({ game, onClose }: Props) {
           <div className="w-10 h-1 rounded-full bg-gray-700" />
         </div>
 
-        <div className="px-6 pb-10 pt-2 space-y-6">
+        <div className="px-6 pb-10 pt-2 space-y-5">
           {/* Group badge */}
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2.5 py-1 rounded-full">
               Group {game.group} · FIFA World Cup 2026
             </span>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-300 text-xl leading-none">✕</button>
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-300"><X size={18} /></button>
           </div>
 
           {/* Teams + score */}
           <div className="flex items-center justify-between gap-4">
-            <span className="flex-1 text-right text-xl font-bold text-white leading-tight">{game.homeTeam}</span>
+            <span className="flex-1 flex items-center justify-end gap-2 text-xl font-bold text-white leading-tight">
+              {game.homeTeam}
+              <StarBtn team={game.homeTeam} isFav={homeFav} />
+            </span>
             {hasScore ? (
-              <span className="text-3xl font-black text-white tabular-nums px-2">
+              <span className={`text-3xl font-black tabular-nums px-2 ${isLive ? 'text-emerald-400' : 'text-white'}`}>
                 {game.homeScore} – {game.awayScore}
               </span>
             ) : (
-              <span className="text-2xl font-black text-gray-600 px-2">vs</span>
+              <div className="flex flex-col items-center gap-1 px-2">
+                {isLive && (
+                  <span className="flex items-center gap-1 text-xs font-bold text-red-400">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-400" />
+                    </span>
+                    LIVE
+                  </span>
+                )}
+                <span className="text-2xl font-black text-gray-600">vs</span>
+              </div>
             )}
-            <span className="flex-1 text-left text-xl font-bold text-white leading-tight">{game.awayTeam}</span>
+            <span className="flex-1 flex items-center gap-2 text-xl font-bold text-white leading-tight">
+              <StarBtn team={game.awayTeam} isFav={awayFav} />
+              {game.awayTeam}
+            </span>
           </div>
+
+          {/* Goal scorers */}
+          {hasScore && (
+            <div className="bg-gray-800 rounded-xl px-4 py-3 space-y-1.5">
+              {goals.length === 0 ? (
+                <p className="text-center text-xs text-gray-500">No goals scored</p>
+              ) : (
+                [...goals].sort((a, b) => a.minute - b.minute).map((g, i) => {
+                  const isHome = g.team === game.homeTeam
+                  return (
+                    <div key={i} className="flex items-center gap-1 text-sm">
+                      <span className="flex-1 text-right text-gray-200 truncate">
+                        {isHome ? fmtScorer(g) : ''}
+                      </span>
+                      <span className="text-gray-500 font-mono text-xs w-20 text-center shrink-0">
+                        ⚽ {fmtMinute(g)}
+                      </span>
+                      <span className="flex-1 text-left text-gray-200 truncate">
+                        {!isHome ? fmtScorer(g) : ''}
+                      </span>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          )}
 
           {/* Match details */}
           <div className="bg-gray-800 rounded-xl divide-y divide-gray-700 text-sm">
             <div className="flex items-center gap-3 px-4 py-3">
-              <span className="text-lg">📅</span>
+              <Calendar size={18} className="text-gray-400 shrink-0" />
               <div>
                 <div className="text-gray-200 font-medium">{formatFullDate(game.date, game.timezone)}</div>
                 <div className="text-gray-400 text-xs">{formatTime(game.date, game.timezone)} venue time · {formatUserTime(game.date)} your time</div>
               </div>
             </div>
-            <div className="flex items-center gap-3 px-4 py-3">
-              <span className="text-lg">🏟️</span>
-              <div>
-                <div className="text-gray-200 font-medium">{game.venue}</div>
-                <div className="text-gray-400 text-xs">{game.city}, {game.country}</div>
+            {game.venue && (
+              <div className="flex items-center gap-3 px-4 py-3">
+                <MapPin size={18} className="text-gray-400 shrink-0" />
+                <div>
+                  <div className="text-gray-200 font-medium">{game.venue}</div>
+                  {(game.city || game.country) && (
+                    <div className="text-gray-400 text-xs">
+                      {[game.city, game.country].filter(Boolean).join(', ')}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
+            {game.referee && (
+              <div className="flex items-center gap-3 px-4 py-3">
+                <User size={18} className="text-gray-400 shrink-0" />
+                <div className="text-gray-200">{game.referee}</div>
+              </div>
+            )}
+            {game.attendance != null && (
+              <div className="flex items-center gap-3 px-4 py-3">
+                <Users size={18} className="text-gray-400 shrink-0" />
+                <div className="text-gray-200">{game.attendance.toLocaleString()} attendance</div>
+              </div>
+            )}
           </div>
 
           {/* Add to calendar */}
@@ -119,7 +210,7 @@ export default function GameDetailSheet({ game, onClose }: Props) {
             onClick={() => addToCalendar(game)}
             className="w-full bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white font-semibold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
-            <span>📆</span>
+            <CalendarPlus size={16} />
             Add to Calendar
           </button>
         </div>

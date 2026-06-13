@@ -10,6 +10,19 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddHttpClient("football-api", (sp, client) =>
+{
+    var cfg = sp.GetRequiredService<IConfiguration>();
+    client.BaseAddress = new Uri("https://api.football-data.org/v4/");
+    var key = cfg["FootballApi:ApiKey"];
+    if (!string.IsNullOrWhiteSpace(key))
+        client.DefaultRequestHeaders.Add("X-Auth-Token", key);
+});
+
+builder.Services.AddSingleton<GameDataService>();
+builder.Services.AddSingleton<FootballApiClient>();
+builder.Services.AddHostedService<ScoreWorker>();
+
 var app = builder.Build();
 
 app.UseCors();

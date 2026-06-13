@@ -2,13 +2,14 @@ using System.Text.Json;
 
 public static class GameEndpoints
 {
+    private static readonly JsonSerializerOptions JsonOpts = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
+
     public static void MapGameEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/games", (IWebHostEnvironment env) =>
-        {
-            var path = Path.Combine(env.ContentRootPath, "Data", "games.json");
-            var json = File.ReadAllText(path);
-            return Results.Content(json, "application/json");
-        });
+        app.MapGet("/api/games", (GameDataService gameData) =>
+            Results.Json(gameData.GetGames(), JsonOpts));
     }
 }

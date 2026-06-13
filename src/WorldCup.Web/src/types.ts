@@ -1,20 +1,36 @@
+export interface GoalEvent {
+  scorer: string
+  minute: number
+  injuryTime?: number
+  team: string
+  type: string  // REGULAR | OWN_GOAL | PENALTY
+}
+
 export interface Game {
   id: number
   date: string
   timezone: string
   group: string
+  stage: string
   homeTeam: string
+  homeCrest: string
   awayTeam: string
+  awayCrest: string
   venue: string
   city: string
   country: string
   homeScore: number | null
   awayScore: number | null
+  status: 'scheduled' | 'live' | 'finished'
+  referee?: string
+  attendance?: number
+  minute?: number
+  goals?: GoalEvent[]
 }
 
 export interface TeamStanding {
   team: string
-  flag: string
+  crest: string
   played: number
   won: number
   drawn: number
@@ -34,7 +50,9 @@ export interface BracketMatch {
   id: string
   date: string
   homeTeam: string
+  homeCrest: string
   awayTeam: string
+  awayCrest: string
   homeScore: number | null
   awayScore: number | null
   venue: string

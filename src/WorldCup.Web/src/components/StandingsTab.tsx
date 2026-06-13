@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react'
 import { api } from '../api'
 import type { Group, TeamStanding } from '../types'
 
-function GroupCard({ group }: { group: Group }) {
+interface GroupCardProps {
+  group: Group
+  favourites: Set<string>
+}
+
+function GroupCard({ group, favourites }: GroupCardProps) {
   const sorted = [...group.teams].sort((a, b) =>
     b.points !== a.points ? b.points - a.points :
     b.gd !== a.gd ? b.gd - a.gd :
@@ -30,28 +35,37 @@ function GroupCard({ group }: { group: Group }) {
             </tr>
           </thead>
           <tbody>
-            {sorted.map((team: TeamStanding, i) => (
-              <tr
-                key={team.team}
-                className={`border-b border-gray-800 last:border-0 ${i < 2 ? 'bg-emerald-400/5' : ''}`}
-              >
-                <td className="px-4 py-2 font-medium text-gray-200 flex items-center gap-2">
-                  {i < 2 && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />}
-                  {i === 2 && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 inline-block" />}
-                  {i === 3 && <span className="w-1.5 h-1.5 rounded-full bg-transparent inline-block" />}
-                  <span>{team.flag}</span>
-                  <span>{team.team}</span>
-                </td>
-                <td className="px-2 py-2 text-center text-gray-400">{team.played}</td>
-                <td className="px-2 py-2 text-center text-gray-400">{team.won}</td>
-                <td className="px-2 py-2 text-center text-gray-400">{team.drawn}</td>
-                <td className="px-2 py-2 text-center text-gray-400">{team.lost}</td>
-                <td className="px-2 py-2 text-center text-gray-400">{team.gf}</td>
-                <td className="px-2 py-2 text-center text-gray-400">{team.ga}</td>
-                <td className="px-2 py-2 text-center text-gray-400">{team.gd >= 0 ? `+${team.gd}` : team.gd}</td>
-                <td className="px-2 py-2 text-center font-bold text-emerald-400">{team.points}</td>
-              </tr>
-            ))}
+            {sorted.map((team: TeamStanding, i) => {
+              const isFav = favourites.has(team.team)
+              return (
+                <tr
+                  key={team.team}
+                  className={`border-b border-gray-800 last:border-0 ${
+                    isFav ? 'bg-amber-400/[0.04]' : i < 2 ? 'bg-emerald-400/5' : ''
+                  }`}
+                >
+                  <td className="px-4 py-2 font-medium text-gray-200">
+                    <div className="flex items-center gap-2">
+                      {i < 2 && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />}
+                      {i === 2 && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 shrink-0" />}
+                      {i === 3 && <span className="w-1.5 h-1.5 rounded-full bg-transparent shrink-0" />}
+                      {team.crest
+                        ? <img src={team.crest} alt="" className="w-5 h-5 object-contain shrink-0" />
+                        : null}
+                      <span>{team.team}</span>
+                    </div>
+                  </td>
+                  <td className="px-2 py-2 text-center text-gray-400">{team.played}</td>
+                  <td className="px-2 py-2 text-center text-gray-400">{team.won}</td>
+                  <td className="px-2 py-2 text-center text-gray-400">{team.drawn}</td>
+                  <td className="px-2 py-2 text-center text-gray-400">{team.lost}</td>
+                  <td className="px-2 py-2 text-center text-gray-400">{team.gf}</td>
+                  <td className="px-2 py-2 text-center text-gray-400">{team.ga}</td>
+                  <td className="px-2 py-2 text-center text-gray-400">{team.gd >= 0 ? `+${team.gd}` : team.gd}</td>
+                  <td className="px-2 py-2 text-center font-bold text-emerald-400">{team.points}</td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
@@ -63,7 +77,11 @@ function GroupCard({ group }: { group: Group }) {
   )
 }
 
-export default function StandingsTab() {
+interface Props {
+  favourites: Set<string>
+}
+
+export default function StandingsTab({ favourites }: Props) {
   const [groups, setGroups] = useState<Group[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -80,7 +98,9 @@ export default function StandingsTab() {
 
   return (
     <div className="px-4 py-4 space-y-4">
-      {groups.map(group => <GroupCard key={group.group} group={group} />)}
+      {groups.map(group => (
+        <GroupCard key={group.group} group={group} favourites={favourites} />
+      ))}
     </div>
   )
 }

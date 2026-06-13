@@ -1,25 +1,45 @@
 import { useState } from 'react'
+import { CalendarDays, BarChart3, Trophy, Star } from 'lucide-react'
 import GamesTab from './components/GamesTab'
 import StandingsTab from './components/StandingsTab'
 import BracketTab from './components/BracketTab'
+import FavouritesTab from './components/FavouritesTab'
 
-type Tab = 'games' | 'standings' | 'bracket'
+type Tab = 'games' | 'standings' | 'bracket' | 'favourites'
 
-const tabs: { id: Tab; label: string; icon: string }[] = [
-  { id: 'games', label: 'Games', icon: '⚽' },
-  { id: 'standings', label: 'Standings', icon: '📊' },
-  { id: 'bracket', label: 'Bracket', icon: '🏆' },
+const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+  { id: 'games', label: 'Games', icon: <CalendarDays size={20} /> },
+  { id: 'standings', label: 'Standings', icon: <BarChart3 size={20} /> },
+  { id: 'bracket', label: 'Bracket', icon: <Trophy size={20} /> },
+  { id: 'favourites', label: 'Favourites', icon: <Star size={20} /> },
 ]
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('games')
+  const [favourites, setFavourites] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem('favouriteTeams')
+      return new Set(stored ? JSON.parse(stored) : [])
+    } catch {
+      return new Set()
+    }
+  })
+
+  function toggleFavourite(team: string) {
+    setFavourites(prev => {
+      const next = new Set(prev)
+      if (next.has(team)) next.delete(team)
+      else next.add(team)
+      localStorage.setItem('favouriteTeams', JSON.stringify([...next]))
+      return next
+    })
+  }
 
   return (
     <div className="flex flex-col min-h-svh bg-gray-950">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-gray-900 border-b border-gray-800 shadow-lg">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-          <span className="text-2xl">🌍</span>
           <div>
             <h1 className="text-base font-bold leading-tight text-white">FIFA World Cup 2026</h1>
             <p className="text-xs text-gray-400">USA · Canada · Mexico</p>
@@ -29,9 +49,10 @@ export default function App() {
 
       {/* Page content */}
       <main className="flex-1 max-w-2xl w-full mx-auto pb-20">
-        {tab === 'games' && <GamesTab />}
-        {tab === 'standings' && <StandingsTab />}
-        {tab === 'bracket' && <BracketTab />}
+        {tab === 'games'      && <GamesTab favourites={favourites} toggleFavourite={toggleFavourite} />}
+        {tab === 'standings'  && <StandingsTab favourites={favourites} />}
+        {tab === 'bracket'    && <BracketTab />}
+        {tab === 'favourites' && <FavouritesTab favourites={favourites} toggleFavourite={toggleFavourite} />}
       </main>
 
       {/* Bottom tab nav */}
@@ -46,7 +67,7 @@ export default function App() {
                 tab === id ? 'text-emerald-400' : 'text-gray-500 hover:text-gray-300'
               }`}
             >
-              <span className="text-xl leading-none">{icon}</span>
+              {icon}
               <span>{label}</span>
             </button>
           ))}
