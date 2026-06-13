@@ -5,15 +5,14 @@ public class FootballApiClient(IHttpClientFactory factory, IConfiguration config
 {
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    public async Task<IEnumerable<ExternalMatchResult>> GetMatchesAsync(DateOnly date)
+    public async Task<IEnumerable<ExternalMatchResult>> GetMatchesAsync()
     {
         var code = config["FootballApi:CompetitionCode"] ?? "WC";
-        var dateStr = date.ToString("yyyy-MM-dd");
 
         try
         {
             using var http = factory.CreateClient("football-api");
-            var response = await http.GetAsync($"competitions/{code}/matches?dateFrom={dateStr}&dateTo={dateStr}");
+            var response = await http.GetAsync($"competitions/{code}/matches");
 
             if (!response.IsSuccessStatusCode)
             {
@@ -40,7 +39,7 @@ public class FootballApiClient(IHttpClientFactory factory, IConfiguration config
                 g.Scorer!.Name!,
                 g.Minute!.Value,
                 g.InjuryTime,
-                g.Team!.ShortName ?? g.Team.Name ?? "",
+                g.Team!.Name ?? g.Team.ShortName ?? "",
                 g.Type ?? "REGULAR"))
             .ToList();
 
@@ -50,8 +49,8 @@ public class FootballApiClient(IHttpClientFactory factory, IConfiguration config
             : $"{referee.Name} ({referee.Nationality})";
 
         return new ExternalMatchResult(
-            m.HomeTeam?.ShortName ?? m.HomeTeam?.Name ?? "",
-            m.AwayTeam?.ShortName ?? m.AwayTeam?.Name ?? "",
+            m.HomeTeam?.Name ?? m.HomeTeam?.ShortName ?? "",
+            m.AwayTeam?.Name ?? m.AwayTeam?.ShortName ?? "",
             m.Score?.FullTime?.Home,
             m.Score?.FullTime?.Away,
             m.Status ?? "SCHEDULED",

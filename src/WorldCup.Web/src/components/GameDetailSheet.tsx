@@ -144,24 +144,28 @@ export default function GameDetailSheet({ game, onClose, favourites, toggleFavou
           </div>
 
           {/* Goal scorers */}
-          {goals.length > 0 && (
+          {hasScore && (
             <div className="bg-gray-800 rounded-xl px-4 py-3 space-y-1.5">
-              {[...goals].sort((a, b) => a.minute - b.minute).map((g, i) => {
-                const isHome = g.team === game.homeTeam
-                return (
-                  <div key={i} className="flex items-center gap-1 text-sm">
-                    <span className="flex-1 text-right text-gray-200 truncate">
-                      {isHome ? fmtScorer(g) : ''}
-                    </span>
-                    <span className="text-gray-500 font-mono text-xs w-20 text-center shrink-0">
-                      ⚽ {fmtMinute(g)}
-                    </span>
-                    <span className="flex-1 text-left text-gray-200 truncate">
-                      {!isHome ? fmtScorer(g) : ''}
-                    </span>
-                  </div>
-                )
-              })}
+              {goals.length === 0 ? (
+                <p className="text-center text-xs text-gray-500">No goals scored</p>
+              ) : (
+                [...goals].sort((a, b) => a.minute - b.minute).map((g, i) => {
+                  const isHome = g.team === game.homeTeam
+                  return (
+                    <div key={i} className="flex items-center gap-1 text-sm">
+                      <span className="flex-1 text-right text-gray-200 truncate">
+                        {isHome ? fmtScorer(g) : ''}
+                      </span>
+                      <span className="text-gray-500 font-mono text-xs w-20 text-center shrink-0">
+                        ⚽ {fmtMinute(g)}
+                      </span>
+                      <span className="flex-1 text-left text-gray-200 truncate">
+                        {!isHome ? fmtScorer(g) : ''}
+                      </span>
+                    </div>
+                  )
+                })
+              )}
             </div>
           )}
 

@@ -31,41 +31,10 @@ public class ScoreWorker(
     {
         try
         {
-            var games = await gameData.ReadGamesAsync();
-            var now = DateTimeOffset.UtcNow;
-
-            // Active window: game is live or about to start.
-            // Catch-up window: unscored game kicked off in the last 7 days (survives long outages/redeploys).
-            var relevant = games
-                .Select(g => (game: g, kickoff: DateTimeOffset.Parse(g.Date, null, DateTimeStyles.RoundtripKind)))
-                .Where(x =>
-                {
-                    var inActiveWindow = x.kickoff >= now.AddHours(-3) && x.kickoff <= now.AddMinutes(15);
-                    var needsCatchUp   = x.game.HomeScore is null
-                                        && x.kickoff >= now.AddDays(-7)
-                                        && x.kickoff < now.AddHours(-2);
-                    return inActiveWindow || needsCatchUp;
-                })
-                .ToList();
-
-            if (relevant.Count == 0)
-            {
-                logger.LogDebug("No live/imminent games – skipping API call");
-                return;
-            }
-
             logger.LogInformation("Polling football API for scores");
 
-            // Query each distinct UTC date that has relevant games (not just "today").
-            var dates = relevant
-                .Select(x => DateOnly.FromDateTime(x.kickoff.UtcDateTime))
-                .Distinct();
-
-            var allResults = new List<ExternalMatchResult>();
-            foreach (var date in dates)
-                allResults.AddRange(await apiClient.GetMatchesAsync(date));
-
-            var results = allResults;
+            var games = await gameData.ReadGamesAsync();
+            var results = await apiClient.GetMatchesAsync();
 
             foreach (var result in results)
             {
@@ -78,27 +47,16 @@ public class ScoreWorker(
 
                 if (match is null)
                 {
-                    // Try partial name matching via config overrides
-                    var mapped = TryMapViaConfig(result.HomeTeam, result.AwayTeam, games);
-                    if (mapped is null)
-                    {
-                        logger.LogWarning("No match found for {Home} vs {Away}", result.HomeTeam, result.AwayTeam);
-                        continue;
-                    }
-                    match = mapped;
+                    logger.LogWarning("No match found for {Home} vs {Away}", result.HomeTeam, result.AwayTeam);
+                    continue;
                 }
 
                 var homeScore = result.HomeScore ?? match.HomeScore ?? 0;
                 var awayScore = result.AwayScore ?? match.AwayScore ?? 0;
 
-                // Resolve goal team names to our internal names so the UI can align them correctly
-                var goals = result.Goals?.Select(g => g with {
-                    Team = ResolveGoalTeam(g.Team, match)
-                }).ToList();
-
                 await gameData.UpdateGameAsync(
                     match.Id, homeScore, awayScore, ourStatus,
-                    result.Referee, result.Attendance, result.Minute, goals);
+                    result.Referee, result.Attendance, result.Minute, result.Goals);
 
                 logger.LogInformation(
                     "Updated game {Id}: {Home} {HomeScore}–{AwayScore} {Away} ({Status})",
@@ -111,49 +69,6 @@ public class ScoreWorker(
         }
     }
 
-    // Map an API goal team name to our internal home/away team name using the same config mapping.
-    private string ResolveGoalTeam(string apiName, GameRecord match)
-    {
-        if (Normalize(apiName) == Normalize(match.HomeTeam)) return match.HomeTeam;
-        if (Normalize(apiName) == Normalize(match.AwayTeam)) return match.AwayTeam;
-
-        var section = config.GetSection("FootballApi:TeamNameMap");
-        foreach (var entry in section.GetChildren())
-        {
-            if (!string.Equals(entry["ApiName"], apiName, StringComparison.OrdinalIgnoreCase)) continue;
-            var ourName = entry["OurName"] ?? apiName;
-            if (Normalize(ourName) == Normalize(match.HomeTeam)) return match.HomeTeam;
-            if (Normalize(ourName) == Normalize(match.AwayTeam)) return match.AwayTeam;
-        }
-
-        return apiName;
-    }
-
-    // Attempt matching using optional name-map overrides in config:
-    //   FootballApi:TeamNameMap:0:ApiName = "Ivory Coast"
-    //   FootballApi:TeamNameMap:0:OurName = "Côte d'Ivoire"
-    private GameRecord? TryMapViaConfig(string apiHome, string apiAway, List<GameRecord> games)
-    {
-        var section = config.GetSection("FootballApi:TeamNameMap");
-        if (!section.Exists()) return null;
-
-        string Resolve(string apiName)
-        {
-            foreach (var entry in section.GetChildren())
-            {
-                if (string.Equals(entry["ApiName"], apiName, StringComparison.OrdinalIgnoreCase))
-                    return entry["OurName"] ?? apiName;
-            }
-            return apiName;
-        }
-
-        var ourHome = Normalize(Resolve(apiHome));
-        var ourAway = Normalize(Resolve(apiAway));
-
-        return games.FirstOrDefault(g =>
-            Normalize(g.HomeTeam) == ourHome && Normalize(g.AwayTeam) == ourAway);
-    }
-
     private static string MapStatus(string apiStatus) => apiStatus switch
     {
         "IN_PLAY" or "PAUSED" or "HALFTIME" => "live",
@@ -161,7 +76,7 @@ public class ScoreWorker(
         _ => "scheduled",
     };
 
-    // Strip accents, lowercase, normalise hyphens so "Côte d'Ivoire" ≈ "cote d'ivoire"
+    // Strip accents, lowercase, normalise hyphens so minor API variations still match
     private static string Normalize(string name)
     {
         var decomposed = name.Normalize(NormalizationForm.FormD);
