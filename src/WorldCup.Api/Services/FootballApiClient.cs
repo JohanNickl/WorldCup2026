@@ -49,8 +49,8 @@ public class FootballApiClient(IHttpClientFactory factory, IConfiguration config
             : $"{referee.Name} ({referee.Nationality})";
 
         return new ExternalMatchResult(
-            m.HomeTeam?.ShortName ?? m.HomeTeam?.Name ?? "",
-            m.AwayTeam?.ShortName ?? m.AwayTeam?.Name ?? "",
+            m.HomeTeam?.Name ?? m.HomeTeam?.ShortName ?? "",
+            m.AwayTeam?.Name ?? m.AwayTeam?.ShortName ?? "",
             m.Score?.FullTime?.Home,
             m.Score?.FullTime?.Away,
             m.Status ?? "SCHEDULED",
