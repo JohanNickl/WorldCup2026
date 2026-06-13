@@ -1,7 +1,17 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
-import type { Game } from '../types'
+import type { Game, GoalEvent } from '../types'
 import GameDetailSheet from './GameDetailSheet'
+
+function fmtMinute(g: GoalEvent) {
+  return g.injuryTime ? `${g.minute}+${g.injuryTime}'` : `${g.minute}'`
+}
+
+function fmtScorer(g: GoalEvent) {
+  if (g.type === 'OWN_GOAL') return `${g.scorer} (og)`
+  if (g.type === 'PENALTY')  return `${g.scorer} (pen)`
+  return g.scorer
+}
 
 export function useNow(intervalMs = 30_000) {
   const [now, setNow] = useState(() => Date.now())
@@ -55,6 +65,9 @@ export function GameCard({ game, favourites, now, onClick }: {
   const isLive     = game.status === 'live'
   const showScore  = game.homeScore !== null && game.awayScore !== null
   const isFavMatch = favourites.has(game.homeTeam) || favourites.has(game.awayTeam)
+  const goals      = game.goals ?? []
+  const homeGoals  = goals.filter(g => g.team === game.homeTeam).sort((a, b) => a.minute - b.minute)
+  const awayGoals  = goals.filter(g => g.team === game.awayTeam).sort((a, b) => a.minute - b.minute)
 
   const gameMs  = new Date(game.date).getTime()
   const diffMs  = gameMs - now
@@ -118,6 +131,22 @@ export function GameCard({ game, favourites, now, onClick }: {
       <div className="mt-2 text-xs text-gray-300 text-center">
         {game.venue} · {game.city}, {game.country}
       </div>
+
+      {isLive && goals.length > 0 && (
+        <div className="mt-2 pt-2 border-t border-gray-800 flex gap-2 text-xs text-gray-400">
+          <div className="flex-1 text-right space-y-0.5">
+            {homeGoals.map((g, i) => (
+              <div key={i}>{fmtScorer(g)} {fmtMinute(g)}</div>
+            ))}
+          </div>
+          <div className="text-gray-600">⚽</div>
+          <div className="flex-1 text-left space-y-0.5">
+            {awayGoals.map((g, i) => (
+              <div key={i}>{fmtMinute(g)} {fmtScorer(g)}</div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

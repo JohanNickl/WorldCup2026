@@ -39,7 +39,7 @@ public class FootballApiClient(IHttpClientFactory factory, IConfiguration config
                 g.Scorer!.Name!,
                 g.Minute!.Value,
                 g.InjuryTime,
-                g.Team!.ShortName ?? g.Team.Name ?? "",
+                g.Team!.Name ?? g.Team.ShortName ?? "",
                 g.Type ?? "REGULAR"))
             .ToList();
 
