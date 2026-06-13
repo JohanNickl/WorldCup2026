@@ -22,22 +22,6 @@ public class FootballApiClient(IHttpClientFactory factory, IConfiguration config
 
             var json = await response.Content.ReadAsStringAsync();
 
-            // Diagnostic: log specific fields from first match to verify API shape
-            try
-            {
-                var root = JsonDocument.Parse(json).RootElement;
-                var first = root.GetProperty("matches").EnumerateArray().FirstOrDefault();
-                if (first.ValueKind != JsonValueKind.Undefined)
-                {
-                    var homeName  = first.TryGetProperty("homeTeam", out var ht) && ht.TryGetProperty("name",  out var n) ? n.GetString() : "(missing)";
-                    var homeCrest = first.TryGetProperty("homeTeam", out var ht2) && ht2.TryGetProperty("crest", out var c) ? c.GetString() : "(missing)";
-                    var venue     = first.TryGetProperty("venue",    out var v) ? v.GetString() : "(missing)";
-                    logger.LogInformation("API shape — homeTeam.name={Name} homeTeam.crest={Crest} venue={Venue}",
-                        homeName, homeCrest, venue);
-                }
-            }
-            catch { /* best-effort */ }
-
             var data = JsonSerializer.Deserialize<MatchesResponse>(json, JsonOpts);
             return data?.Matches?.Select(ToGameRecord) ?? [];
         }
