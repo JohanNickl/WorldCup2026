@@ -61,12 +61,20 @@ public class FootballApiClient(IHttpClientFactory factory, IConfiguration config
             ? m.Group[6..]
             : m.Group ?? "";
 
+        // Normalize stage names: football-data.org uses LAST_32/LAST_16
+        var stage = m.Stage switch
+        {
+            "LAST_32" => "ROUND_OF_32",
+            "LAST_16" => "ROUND_OF_16",
+            _ => m.Stage ?? "",
+        };
+
         return new GameRecord(
             Id:        m.Id,
             Date:      m.UtcDate ?? "",
             Timezone:  "UTC",
             Group:     group,
-            Stage:     m.Stage ?? "",
+            Stage:     stage,
             HomeTeam:  m.HomeTeam?.Name ?? m.HomeTeam?.ShortName ?? "",
             HomeCrest: m.HomeTeam?.Crest ?? "",
             AwayTeam:  m.AwayTeam?.Name ?? m.AwayTeam?.ShortName ?? "",
