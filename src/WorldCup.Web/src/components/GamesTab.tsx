@@ -46,6 +46,23 @@ function formatUserTime(iso: string) {
   })
 }
 
+const KNOCKOUT_LABELS: Record<string, string> = {
+  ROUND_OF_32:    'Round of 32',
+  ROUND_OF_16:    'Round of 16',
+  QUARTER_FINALS: 'Quarter-final',
+  SEMI_FINALS:    'Semi-final',
+  THIRD_PLACE:    '3rd Place',
+  FINAL:          'Final',
+}
+
+function stageLabel(game: Game) {
+  return KNOCKOUT_LABELS[game.stage] ?? `Group ${game.group}`
+}
+
+function isKnockout(game: Game) {
+  return game.stage in KNOCKOUT_LABELS
+}
+
 function groupByDate(games: Game[]): Map<string, Game[]> {
   const map = new Map<string, Game[]>()
   for (const game of games) {
@@ -88,8 +105,12 @@ export function GameCard({ game, favourites, now, onClick }: {
       onClick={onClick}
     >
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-semibold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">
-          Group {game.group}
+        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+          isKnockout(game)
+            ? 'text-violet-400 bg-violet-400/10'
+            : 'text-emerald-400 bg-emerald-400/10'
+        }`}>
+          {stageLabel(game)}
         </span>
         <div className="flex flex-col items-end gap-0.5">
           <div className="flex items-center gap-2">

@@ -27,13 +27,17 @@ function TeamRow({ name, crest, score }: { name: string; crest: string; score: n
   )
 }
 
-function MatchCard({ match }: { match: BracketMatch }) {
+function MatchCard({ match, roundName }: { match: BracketMatch; roundName?: string }) {
   const hasScore = match.homeScore !== null && match.awayScore !== null
 
   return (
     <div className="bg-gray-900 border border-gray-700 rounded-lg w-44 text-xs overflow-hidden">
-      <div className="bg-gray-800 border-b border-gray-700 px-2 py-1 text-gray-400 text-center truncate">
-        {formatShortDate(match.date)}
+      <div className="bg-gray-800 border-b border-gray-700 px-2 py-1 text-center truncate">
+        {roundName && (
+          <span className="text-violet-400 font-semibold">{roundName}</span>
+        )}
+        {roundName && <span className="text-gray-600 mx-1">·</span>}
+        <span className="text-gray-400">{formatShortDate(match.date)}</span>
       </div>
       <TeamRow name={match.homeTeam} crest={match.homeCrest} score={hasScore ? match.homeScore : null} />
       <div className="border-t border-gray-800">
@@ -51,7 +55,7 @@ function RoundColumn({ round }: { round: BracketRound }) {
       </div>
       <div className="flex flex-col gap-3 justify-around flex-1">
         {round.matches.map(match => (
-          <MatchCard key={match.id} match={match} />
+          <MatchCard key={match.id} match={match} roundName={round.name} />
         ))}
       </div>
     </div>
@@ -91,7 +95,7 @@ export default function BracketTab() {
         <div className="px-4 mt-6">
           <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Third Place Play-off</div>
           <div className="inline-block">
-            <MatchCard match={thirdPlace.matches[0]} />
+            <MatchCard match={thirdPlace.matches[0]} roundName={thirdPlace.name} />
           </div>
         </div>
       )}
